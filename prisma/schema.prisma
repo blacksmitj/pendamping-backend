@@ -11,7 +11,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model Address {
@@ -45,7 +44,7 @@ model Batch {
 }
 
 model CapaianOutput {
-  id                           String           @db.VarChar(255)
+  id                           String           @unique @db.VarChar(255)
   id_pendamping                BigInt?
   id_tkm                       String           @db.VarChar(64)
   month_report                 Int
@@ -328,7 +327,7 @@ model PesertaDetail {
 }
 
 model Profile {
-  id            Int       @default(autoincrement())
+  id            Int       @unique @default(autoincrement())
   user_id       BigInt
   nik           String?   @db.VarChar(20)
   no_wa         String?   @db.VarChar(20)
