@@ -1,0 +1,506 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Address {
+  id             Int          @default(autoincrement())
+  profile_id     Int
+  label          String?
+  prov_id        String?      @db.VarChar(25)
+  city_id        String?      @db.VarChar(25)
+  district_id    String?      @db.VarChar(25)
+  subdistrict_id String?      @db.VarChar(50)
+  address        String?      @db.Text
+  postal_code    String?      @db.VarChar(10)
+  longitude      String?      @db.VarChar(25)
+  latitude       String?      @db.VarChar(25)
+  created_at     DateTime?
+  updated_at     DateTime?
+  link_maps      String?
+  profile        Profile      @relation(fields: [profile_id], references: [id])
+  province       Province?    @relation(fields: [prov_id], references: [id])
+  city           City?        @relation(fields: [city_id], references: [id])
+  district       District?    @relation(fields: [district_id], references: [dist_id])
+  subdistrict    Subdistrict? @relation(fields: [subdistrict_id], references: [subdist_id])
+
+  @@id([id, profile_id])
+}
+
+model Batch {
+  id        Int       @id @default(autoincrement())
+  batchID   Int
+  startdate DateTime? @db.Date
+}
+
+model CapaianOutput {
+  id                           String           @db.VarChar(255)
+  id_pendamping                BigInt?
+  id_tkm                       String           @db.VarChar(64)
+  month_report                 Int
+  bookkeeping_cashflow         String?          @db.VarChar(50)
+  bookkeeping_income_statement String?          @db.VarChar(50)
+  cashflow_proof_url           String?          @db.Text
+  income_proof_url             String?          @db.Text
+  sales_volume                 Int?
+  sales_volume_unit            String?          @db.VarChar(25)
+  production_capacity          Int?
+  production_capacity_unit     String?          @db.VarChar(25)
+  marketing_area               String?          @db.Text
+  revenue                      Int?
+  obstacle                     String?          @db.Text
+  business_condition           String?          @db.Text
+  created_at                   DateTime?
+  updated_at                   DateTime?
+  note_confirmation            String?
+  isverified                   String?          @default("pending") @db.VarChar(25)
+  lpj                          Lpj?
+  note_verified                String?          @db.Text
+  tkm_new_employee             TkmNewEmployee[]
+
+  @@id([id, id_tkm])
+}
+
+model City {
+  id         String     @id @db.VarChar(25)
+  prov_id    String?    @db.VarChar(25)
+  city_name  String?
+  city_merge String?
+  province   Province?  @relation(fields: [prov_id], references: [id])
+  districts  District[]
+  addresses  Address[]
+}
+
+model District {
+  dist_id      String        @id @db.VarChar(25)
+  city_id      String?       @db.VarChar(25)
+  dist_name    String?
+  city         City?         @relation(fields: [city_id], references: [id])
+  subdistricts Subdistrict[]
+  addresses    Address[]
+}
+
+model FailedJob {
+  id         BigInt   @id @default(autoincrement())
+  uuid       String   @unique
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp()
+}
+
+model GroupPeserta {
+  id                     Int     @default(autoincrement())
+  id_tkm_pemula_terakhir String  @db.VarChar(10)
+  nama_group             String?
+
+  @@id([id, id_tkm_pemula_terakhir])
+}
+
+model LogAktifitas {
+  id         BigInt    @id @default(autoincrement())
+  user_id    Int?
+  aktifitas  String?   @db.Text
+  data_awal  String?   @db.Text
+  data_akhir String?   @db.Text
+  keterangan String?   @db.Text
+  created_at DateTime?
+  updated_at DateTime?
+}
+
+model LogbookHarian {
+  id                 String    @db.VarChar(255)
+  id_pendamping      Int
+  id_tkm             String    @db.VarChar(100)
+  activitySummary    String?   @db.Text
+  deliveryMethod     String?   @db.VarChar(100)
+  documentationFiles String?   @db.Text
+  expenseProofFile   String?   @db.Text
+  jpl                Int?
+  visitType          String?   @db.VarChar(100)
+  logbookDate        DateTime? @db.Date
+  meetingType        String?   @db.VarChar(100)
+  mentoringMaterial  String?   @db.Text
+  obstacle           String?   @db.Text
+  solutions          String?   @db.Text
+  startTime          DateTime? @db.Time()
+  endTime            DateTime? @db.Time()
+  totalExpense       Decimal?  @db.Decimal(12, 2)
+  reasonNoExpense    String?   @db.Text
+  created_at         DateTime? @default(now()) @db.Timestamp()
+  updated_at         DateTime? @updatedAt @db.Timestamp()
+  verified           String?   @default("pending") @db.VarChar(25)
+  groupID            Int?
+  month_report       Int?
+  note_verified      String?   @db.Text
+
+  @@id([id, id_pendamping, id_tkm])
+}
+
+model Migration {
+  id        Int    @id @default(autoincrement())
+  migration String
+  batch     Int
+}
+
+model ModelHasPermission {
+  permission_id BigInt
+  model_type    String
+  model_id      BigInt
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([permission_id, model_id, model_type])
+  @@index([model_id, model_type])
+}
+
+model ModelHasRole {
+  role_id    BigInt
+  model_type String
+  model_id   BigInt
+  role       Role   @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  user       User   @relation(fields: [model_id], references: [id])
+
+  @@id([role_id, model_id, model_type])
+  @@index([model_id, model_type])
+}
+
+model PasswordResetToken {
+  email      String    @id
+  token      String
+  created_at DateTime? @db.Timestamp()
+}
+
+model Permission {
+  id                   BigInt               @id @default(autoincrement())
+  name                 String
+  guard_name           String
+  created_at           DateTime?            @db.Timestamp()
+  updated_at           DateTime?            @db.Timestamp()
+  model_has_permission ModelHasPermission[]
+  role_has_permission  RoleHasPermission[]
+
+  @@unique([name, guard_name])
+}
+
+model PersonalAccessToken {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp()
+  expires_at     DateTime? @db.Timestamp()
+  created_at     DateTime? @db.Timestamp()
+  updated_at     DateTime? @db.Timestamp()
+
+  @@index([tokenable_type, tokenable_id])
+}
+
+model Peserta {
+  no                                                    Int       @id @default(autoincrement())
+  status                                                String?   @db.VarChar(50)
+  nama                                                  String?   @db.VarChar(200)
+  link_detail_tkm                                       String?   @db.Text
+  apakah_sudah_submit_pendaftaran                       Boolean?
+  tanggal_submit_pendaftaran                            DateTime? @db.Date
+  id_tkm                                                Int?
+  tanggal_daftar                                        DateTime? @db.Date
+  id_pendaftar                                          Int?
+  nik                                                   String?   @db.VarChar(20)
+  nama_usaha                                            String?   @db.VarChar(200)
+  aktivitas_saat_ini                                    String?   @db.VarChar(200)
+  no_kk                                                 String?   @db.VarChar(20)
+  upload_kartu_keluarga                                 String?   @db.Text
+  pendidikan_terakhir                                   String?   @db.VarChar(100)
+  alamat_ktp                                            String?   @db.Text
+  provinsi_ktp                                          String?   @db.VarChar(100)
+  kota_ktp                                              String?   @db.VarChar(100)
+  kecamatan_ktp                                         String?   @db.VarChar(100)
+  kelurahan_ktp                                         String?   @db.VarChar(100)
+  kode_pos_ktp                                          String?   @db.VarChar(10)
+  alamat_domisili_dan_alamat_ktp_sama                   Boolean?
+  alamat_domisili                                       String?   @db.Text
+  provinsi_domisili                                     String?   @db.VarChar(100)
+  kota_domisili                                         String?   @db.VarChar(100)
+  kecamatan_domisili                                    String?   @db.VarChar(100)
+  kelurahan_domisili                                    String?   @db.VarChar(100)
+  kode_pos_domisili                                     String?   @db.VarChar(10)
+  penyandang_disabilitas                                Boolean?
+  jenis_disabilitas                                     String?   @db.VarChar(150)
+  link_ktp                                              String?   @db.Text
+  link_pas_foto                                         String?   @db.Text
+  jenis_medsos                                          String?   @db.VarChar(100)
+  nama_medsos                                           String?   @db.VarChar(100)
+  link_media_sosial                                     String?   @db.Text
+  no_whatsapp                                           String?   @db.VarChar(20)
+  nama_kerabat_1                                        String?   @db.VarChar(200)
+  no_kerabat_1                                          String?   @db.VarChar(20)
+  status_kerabat_1                                      String?   @db.VarChar(100)
+  nama_kerabat_2                                        String?   @db.VarChar(200)
+  no_kerabat_2                                          String?   @db.VarChar(20)
+  status_kerabat_2                                      String?   @db.VarChar(100)
+  tempat_lahir                                          String?   @db.VarChar(100)
+  tgl_lahir                                             DateTime? @db.Date
+  umur                                                  Int?
+  nomor_nib                                             String?   @db.VarChar(50)
+  sektor_usaha                                          String?   @db.VarChar(100)
+  jenis_usaha                                           String?   @db.VarChar(100)
+  deskripsi_usaha                                       String?   @db.Text
+  produk_utama                                          String?   @db.VarChar(200)
+  lokasi_usaha                                          String?   @db.VarChar(200)
+  kepemilikan_lokasi_usaha                              String?   @db.VarChar(100)
+  alamat_usaha_dan_alamat_domisili_sama                 Boolean?
+  alamat_usaha                                          String?   @db.Text
+  provinsi_usaha                                        String?   @db.VarChar(100)
+  kota_usaha                                            String?   @db.VarChar(100)
+  kecamatan_usaha                                       String?   @db.VarChar(100)
+  kelurahan_usaha                                       String?   @db.VarChar(100)
+  kode_pos_usaha                                        String?   @db.VarChar(10)
+  saluran_pemasaran                                     String?   @db.Text
+  wilayah_pemasaran                                     String?   @db.Text
+  wilayah_negara_pemasaran                              String?   @db.Text
+  mitra_usaha                                           String?   @db.VarChar(200)
+  jumlah_mitra_usaha                                    Int?
+  omset_per_periode                                     Decimal?  @db.Decimal(15, 2)
+  laba_per_periode                                      Decimal?  @db.Decimal(15, 2)
+  jumlah_produk_per_periode                             Int?
+  satuan_jumlah_produk_per_periode                      String?   @db.VarChar(50)
+  dokumen_surat_permohonan_bantuan                      String?   @db.Text
+  dokumen_surat_pernyataan_kesanggupan                  String?   @db.Text
+  dokumen_profil_usaha                                  String?   @db.Text
+  dokumen_bmc_strategi_model_usaha                      String?   @db.Text
+  dokumen_rab                                           String?   @db.Text
+  dokumen_rencana_pengembangan_usaha                    String?   @db.Text
+  link_video                                            String?   @db.Text
+  foto_usaha                                            String?   @db.Text
+  dokumen_pencatatan_keuangan                           String?   @db.Text
+  lpj_tkm_pemula_2024                                   String?   @db.Text
+  lpj_tkm_pemula_2024_diupload_dari_tkm_pemula_terakhir String?   @db.Text
+  bast_tkm_pemula_2024                                  String?   @db.Text
+  dokumentasi_usaha_tkm_pemula_2024                     String?   @db.Text
+  dokumen_nib                                           String?   @db.Text
+  nomor_dokumen_nib                                     String?   @db.VarChar(50)
+  nama_usaha_dokumen_nib                                String?   @db.VarChar(200)
+  dokumen_legalitas                                     String?   @db.Text
+  nomor_dokumen_legalitas                               String?   @db.VarChar(50)
+  nama_dokumen_legalitas                                String?   @db.VarChar(200)
+  dokumen_sku                                           String?   @db.Text
+  nomor_dokumen_sku                                     String?   @db.VarChar(50)
+  tanggal_dokumen_sku                                   DateTime? @db.Date
+  kelurahan_dokumen_sku                                 String?   @db.VarChar(100)
+  pejabat_penandatangan_dokumen_sku                     String?   @db.VarChar(200)
+  pleno                                                 String?   @db.VarChar(100)
+  ptn_pts                                               String?   @db.VarChar(100)
+  batch_pembekalan                                      String?   @db.VarChar(50)
+  tenaga_kerja1_nama                                    String?
+  tenaga_kerja1_nik                                     String?
+}
+
+model PesertaDetail {
+  id                  Int       @id @default(autoincrement())
+  id_tkm              String    @db.VarChar(100)
+  communicationStatus String
+  fundDisbursement    String
+  presenceStatus      String
+  willingToBeAssisted String
+  reasonNotWilling    String?   @db.Text
+  statusApplicant     String
+  reasonDrop          String?   @db.Text
+  no_wa               String?   @db.VarChar(20)
+  link_map            String?   @db.Text
+  created_at          DateTime? @default(now()) @db.Timestamp()
+  updated_at          DateTime? @updatedAt @db.Timestamp()
+  bmcFile             String?
+  actionPlanFile      String?
+}
+
+model Profile {
+  id            Int       @default(autoincrement())
+  user_id       BigInt
+  nik           String?   @db.VarChar(20)
+  no_wa         String?   @db.VarChar(20)
+  jenis_kelamin String?   @db.VarChar(10)
+  foto          String?   @db.Text
+  tempat_lahir  String?
+  tanggal_lahir DateTime? @db.Date
+  created_at    DateTime?
+  updated_at    DateTime?
+  univ_id       Int?
+  user          User      @relation(fields: [user_id], references: [id])
+  addresses     Address[]
+
+  @@id([id, user_id])
+}
+
+model Province {
+  id        String    @id @db.VarChar(25)
+  prov_name String?   @db.VarChar(50)
+  zone      String?   @db.VarChar(60)
+  cities    City[]
+  addresses Address[]
+}
+
+model Role {
+  id                   BigInt              @id @default(autoincrement())
+  name                 String
+  guard_name           String
+  created_at           DateTime?           @db.Timestamp()
+  updated_at           DateTime?           @db.Timestamp()
+  model_has_roles      ModelHasRole[]
+  role_has_permissions RoleHasPermission[]
+
+  @@unique([name, guard_name])
+}
+
+model RoleHasPermission {
+  permission_id BigInt
+  role_id       BigInt
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([permission_id, role_id])
+}
+
+model RoleSidebar {
+  sidebar_id Int
+  role_id    Int
+
+  @@id([sidebar_id, role_id])
+}
+
+model Sidebar {
+  id         Int       @id @default(autoincrement())
+  sidebar    String?
+  icon       String?
+  link       String?
+  keterangan String?
+  urutan     Int?
+  isaktif    String?   @db.VarChar(3)
+  suburutan  Int?
+  created_at DateTime?
+  updated_at DateTime?
+}
+
+model Subdistrict {
+  subdist_id   String    @id @db.VarChar(50)
+  dist_id      String?   @db.VarChar(25)
+  subdist_name String?
+  district     District? @relation(fields: [dist_id], references: [dist_id])
+  addresses    Address[]
+}
+
+model TemuBisnis {
+  id              Int       @id @default(autoincrement())
+  id_tkm          String?   @db.VarChar(25)
+  reasonRecommend String?   @db.Text
+  created_at      DateTime?
+  updated_at      DateTime?
+  mentor_id       Int?
+}
+
+model TkmNewEmployee {
+  id                BigInt        @default(autoincrement())
+  capaian_output_id String        @db.VarChar(255)
+  employment_status String?       @db.VarChar(50)
+  bpjs_card_url     String?       @db.Text
+  bpjs_status       String?       @db.VarChar(50)
+  bpjs_number       String?       @db.VarChar(50)
+  bpjs_type         String?       @db.VarChar(50)
+  ktp_url           String?       @db.Text
+  name              String?       @db.VarChar(100)
+  nik               String?       @db.VarChar(32)
+  role              String?       @db.VarChar(100)
+  salary_slip_url   String?       @db.Text
+  isaktif           String?       @default("T") @db.VarChar(3)
+  created_at        DateTime?
+  updated_at        DateTime?
+  gender            String?       @db.VarChar(2)
+  disability        Disability?   @default(F)
+  disabilityType    String?
+  capaian_output    CapaianOutput @relation(fields: [capaian_output_id], references: [id])
+
+  @@id([id, capaian_output_id])
+}
+
+model University {
+  id       Int     @id @default(autoincrement())
+  name     String
+  alamat   String? @db.Text
+  city     String  @db.VarChar(25)
+  province String  @db.VarChar(25)
+}
+
+model UploadReport {
+  id          BigInt       @id @default(autoincrement())
+  admin_id    BigInt?
+  link_report String?      @db.Text
+  created_at  DateTime?
+  updated_at  DateTime?
+  note        String?
+  verified    TkmVerified? @default(F)
+}
+
+model UserPeserta {
+  admin_id       Int
+  user_id        Int?
+  id_tkm         String
+  created_at     DateTime?
+  updated_at     DateTime?
+  superadmin     Int?
+  batch          Int?
+  status_peserta UserPesertaStatus? @default(pending)
+
+  @@id([admin_id, id_tkm])
+}
+
+model User {
+  id                     BigInt         @id @default(autoincrement())
+  name                   String
+  email                  String?        @unique
+  user_verified          String?        @default("F") @db.VarChar(2)
+  password               String?
+  remember_token         String?        @db.VarChar(100)
+  api_token              String?
+  created_at             DateTime?      @db.Timestamp()
+  updated_at             DateTime?      @db.Timestamp()
+  verified_by            String?
+  verified_at            DateTime?      @db.Timestamp()
+  token_kemnaker         String?        @db.Text
+  refresh_token_kemnaker String?        @db.Text
+  profiles               Profile[]
+  model_has_roles        ModelHasRole[]
+}
+
+enum Lpj {
+  T
+  F
+}
+
+enum Disability {
+  T
+  F
+}
+
+enum TkmVerified {
+  T
+  F
+}
+
+enum UserPesertaStatus {
+  active
+  drop
+  pending
+}
