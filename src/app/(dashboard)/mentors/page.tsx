@@ -102,7 +102,7 @@ export default function MentorsPage() {
           <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">
             Mentors
           </p>
-          <h1 className="text-3xl font-semibold text-slate-950 lg:text-4xl">
+          <h1 className="text-3xl font-semibold text-foreground lg:text-4xl">
             Mentor list
           </h1>
           <p className="max-w-2xl text-base text-muted-foreground">
@@ -117,9 +117,8 @@ export default function MentorsPage() {
           className="gap-2"
         >
           <RefreshCw
-            className={`h-4 w-4 ${
-              mentorsFetching ? "animate-spin text-primary" : ""
-            }`}
+            className={`h-4 w-4 ${mentorsFetching ? "animate-spin text-primary" : ""
+              }`}
           />
           Refresh data
         </Button>
@@ -183,13 +182,13 @@ export default function MentorsPage() {
           <TableSkeleton rows={6} columns={5} />
         ) : mentors.length > 0 ? (
           mentors.map((mentor: Mentor) => (
-            <TableRow key={mentor.id}>
+            <TableRow key={mentor.id} className="border-border hover:bg-accent">
               <TableCell>
                 <AvatarBubble photo={mentor.photo} name={mentor.name} />
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="max-w-[220px] truncate font-medium">{mentor.name}</span>
+                  <span className="max-w-[220px] truncate font-medium text-foreground">{mentor.name}</span>
                   <span className="max-w-[220px] truncate text-xs text-muted-foreground">
                     {mentor.email || "No email"}
                   </span>
@@ -197,7 +196,7 @@ export default function MentorsPage() {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GraduationCap className="h-4 w-4 text-sky-600" />
+                  <GraduationCap className="h-4 w-4 text-chart-3" />
                   <div className="flex flex-col">
                     <span className="max-w-[220px] truncate">
                       {mentor.university?.name ?? "Not linked"}
@@ -212,7 +211,7 @@ export default function MentorsPage() {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4 text-emerald-600" />
+                  <Phone className="h-4 w-4 text-chart-2" />
                   {mentor.phone || "No phone"}
                 </div>
               </TableCell>

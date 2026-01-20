@@ -1,5 +1,6 @@
 export type Participant = {
   no: number;
+  id_tkm: number | null;
   nama: string | null;
   nama_usaha: string | null;
   status: string | null;
@@ -9,10 +10,12 @@ export type Participant = {
   tanggal_daftar: string | null;
   no_whatsapp: string | null;
   photo: string | null;
+  omset_growth: number | null;
+  new_employees: number | null;
 };
 
 export type Mentor = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -53,12 +56,50 @@ export type ListQueryParams = {
   filterCondition?: string;
   filterVerified?: string;
   filterDate?: string;
+  status?: string;
+  province?: string;
+  city?: string;
+};
+
+export type MapDistribution = {
+  name: string; // Province Name
+  value: number; // Count
+};
+
+export type TopOmzetParticipant = {
+  nama: string;
+  nama_usaha: string;
+  photo: string | null;
+  growth: number;
+  last_revenue: number;
+};
+
+export type UniversityStat = {
+  university_name: string;
+  total_mentors: number;
+  total_participants: number;
+  total_new_employees: number;
+  avg_growth: number;
+};
+
+export type TopMentorVisit = {
+  name: string;
+  foto: string | null;
+  visit_count: number;
 };
 
 export type DashboardSummary = {
-  participants: number;
-  mentors: number;
-  universities: number;
+  counts: {
+    participants: number;
+    mentors: number;
+    universities: number;
+    newEmployees: number;
+    avgOmzetGrowth: number;
+  };
+  mapDistribution: MapDistribution[];
+  topOmzetParticipants: TopOmzetParticipant[];
+  universityStats: UniversityStat[];
+  topMentorsVisits: TopMentorVisit[];
   updatedAt: string;
   error?: string;
 };

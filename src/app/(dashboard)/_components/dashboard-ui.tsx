@@ -47,12 +47,12 @@ export function StatCard({
   hint: string;
 }) {
   return (
-    <Card className="relative overflow-hidden border-border/80 bg-card/80 backdrop-blur">
+    <Card className="relative overflow-hidden border-border bg-card backdrop-blur">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <div className="text-3xl font-semibold text-slate-950">{value}</div>
+            <div className="text-3xl font-semibold text-foreground">{value}</div>
             <p className="text-xs text-muted-foreground">{hint}</p>
           </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -76,42 +76,52 @@ export function DataCard({
   columns,
   headerActions,
   children,
+  customHeader,
 }: {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   isLoading: boolean;
   isError: boolean;
   emptyCopy: string;
-  searchPlaceholder: string;
-  searchValue: string;
-  onSearchChange: (value: string) => void;
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   columns: string[];
   headerActions?: ReactNode;
   children: ReactNode;
+  customHeader?: ReactNode;
 }) {
   return (
-    <Card className="h-full backdrop-blur">
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            className="sm:w-72"
-          />
-          {headerActions}
-        </div>
+    <Card className="h-full backdrop-blur border-border bg-card">
+      <CardHeader>
+        {customHeader ? (
+          customHeader
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-card-foreground">{title}</CardTitle>
+              <CardDescription className="text-muted-foreground">{description}</CardDescription>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              {onSearchChange && (
+                <Input
+                  placeholder={searchPlaceholder}
+                  value={searchValue}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  className="sm:w-72 bg-muted border-input text-foreground placeholder:text-muted-foreground"
+                />
+              )}
+              {headerActions}
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-border hover:bg-accent">
               {columns.map((column) => (
-                <TableHead key={column}>{column}</TableHead>
+                <TableHead key={column} className="text-muted-foreground">{column}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -136,6 +146,7 @@ export function DataCard({
     </Card>
   );
 }
+
 
 export function PaginationControls({
   page,
@@ -205,7 +216,7 @@ export function EmptyRow({
   colSpan?: number;
 }) {
   return (
-    <TableRow>
+    <TableRow className="border-border hover:bg-accent">
       <TableCell
         colSpan={colSpan}
         className="py-8 text-center text-sm text-muted-foreground"

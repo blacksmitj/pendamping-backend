@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "../../../../generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -20,16 +21,16 @@ export async function GET(request: Request) {
     const filterVerified = searchParams.get("verified") ?? "";
     const filterDate = searchParams.get("date") ?? "";
 
-    const orderBy =
+    const orderBy: Prisma.CapaianOutputOrderByWithRelationInput =
       sortBy === "verified"
-        ? { isverified: sortOrder }
+        ? { isverified: sortOrder as Prisma.SortOrder }
         : sortBy === "pendamping"
-        ? { id_pendamping: sortOrder }
-        : sortBy === "id_tkm"
-        ? { id_tkm: sortOrder }
-        : sortBy === "condition"
-        ? { business_condition: sortOrder }
-        : { updated_at: sortOrder };
+          ? { id_pendamping: sortOrder as Prisma.SortOrder }
+          : sortBy === "id_tkm"
+            ? { id_tkm: sortOrder as Prisma.SortOrder }
+            : sortBy === "condition"
+              ? { business_condition: sortOrder as Prisma.SortOrder }
+              : { updated_at: sortOrder as Prisma.SortOrder };
 
     let pendampingIdsFromSearch: bigint[] = [];
     let tkmIdsFromSearch: number[] = [];
@@ -69,9 +70,9 @@ export async function GET(request: Request) {
     const dateRange =
       filterDate && !Number.isNaN(Date.parse(filterDate))
         ? {
-            gte: new Date(filterDate),
-            lt: new Date(new Date(filterDate).getTime() + 24 * 60 * 60 * 1000),
-          }
+          gte: new Date(filterDate),
+          lt: new Date(new Date(filterDate).getTime() + 24 * 60 * 60 * 1000),
+        }
         : undefined;
 
     const searchNumber = Number(search);
@@ -80,14 +81,14 @@ export async function GET(request: Request) {
     const where = {
       ...(search
         ? {
-            OR: [
-              ...(hasSearchNumber ? [{ id_tkm: searchNumber }] : []),
-              { id_pendamping: { in: pendampingIdsFromSearch } },
-              { id_tkm: { in: tkmIdsFromSearch } },
-              { obstacle: { contains: search } },
-              { business_condition: { contains: search } },
-            ],
-          }
+          OR: [
+            ...(hasSearchNumber ? [{ id_tkm: searchNumber }] : []),
+            { id_pendamping: { in: pendampingIdsFromSearch } },
+            { id_tkm: { in: tkmIdsFromSearch } },
+            { obstacle: { contains: search } },
+            { business_condition: { contains: search } },
+          ],
+        }
         : undefined),
       ...(filterCondition ? { business_condition: filterCondition } : undefined),
       ...(filterVerified ? { isverified: filterVerified } : undefined),
@@ -133,19 +134,19 @@ export async function GET(request: Request) {
     const [pendampingProfiles, peserta] = await Promise.all([
       pendampingIds.length
         ? prisma.profile.findMany({
-            where: { user_id: { in: pendampingIds } },
-            select: {
-              user_id: true,
-              univ_id: true,
-              user: { select: { name: true } },
-            },
-          })
+          where: { user_id: { in: pendampingIds } },
+          select: {
+            user_id: true,
+            univ_id: true,
+            user: { select: { name: true } },
+          },
+        })
         : [],
       tkmIds.length
         ? prisma.peserta.findMany({
-            where: { id_tkm: { in: tkmIds } },
-            select: { id_tkm: true, nama: true },
-          })
+          where: { id_tkm: { in: tkmIds } },
+          select: { id_tkm: true, nama: true },
+        })
         : [],
     ]);
 
@@ -159,9 +160,9 @@ export async function GET(request: Request) {
 
     const universities = universityIds.length
       ? await prisma.university.findMany({
-          where: { id: { in: universityIds } },
-          select: { id: true, name: true },
-        })
+        where: { id: { in: universityIds } },
+        select: { id: true, name: true },
+      })
       : [];
 
     const pendampingMap = new Map(

@@ -15,76 +15,98 @@ export async function GET(request: Request) {
     const search = (searchParams.get("search") ?? "").trim();
     const sortBy = searchParams.get("sortBy") ?? "id";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
-    const skip = (page - 1) * pageSize;
+    const offset = (page - 1) * pageSize;
 
-    const orderBy: Prisma.ProfileOrderByWithRelationInput =
-      sortBy === "name"
-        ? { user: { name: sortOrder as Prisma.SortOrder } }
-        : sortBy === "email"
-        ? { user: { email: sortOrder as Prisma.SortOrder } }
-        : { id: sortOrder as Prisma.SortOrder };
+    // Define valid sort columns to prevent SQL injection
+    const validSortColumns = {
+      id: "u.id",
+      name: "u.name",
+      email: "u.email",
+    };
 
-    const where = search
-      ? {
-          OR: [
-            { user: { name: { contains: search } } },
-            { user: { email: { contains: search } } },
-            { no_wa: { contains: search } },
-            { university: { is: { name: { contains: search } } } },
-          ],
-        }
-      : undefined;
+    // Default to u.id if invalid sort column
+    const orderByClause = validSortColumns[sortBy as keyof typeof validSortColumns]
+      ? `${validSortColumns[sortBy as keyof typeof validSortColumns]} ${sortOrder.toUpperCase()}`
+      : `u.id ${sortOrder.toUpperCase()}`;
 
-    const profileSelect = {
-      id: true,
-      univ_id: true,
-      jenis_kelamin: true,
-      no_wa: true,
-      foto: true,
-      user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-      university: {
-        select: {
-          id: true,
-          name: true,
-          city: { select: { city_name: true } },
-          province: { select: { prov_name: true } },
-        },
-      },
-    } as const satisfies Prisma.ProfileSelect;
+    // Base query parts
+    let whereClause = `
+      WHERE r.name = 'user'
+    `;
 
-    type ProfileWithUser = Prisma.ProfileGetPayload<{
-      select: typeof profileSelect;
-    }>;
+    const queryParams: any[] = [];
 
-    const profiles = (await prisma.profile.findMany({
-      take: pageSize,
-      skip,
-      orderBy,
-      where,
-      select: profileSelect,
-    })) as ProfileWithUser[];
+    if (search) {
+      whereClause += `
+        AND (
+          u.name LIKE ? OR 
+          u.email LIKE ? OR 
+          p.no_wa LIKE ? OR 
+          univ.name LIKE ?
+        )
+      `;
+      const searchLike = `%${search}%`;
+      queryParams.push(searchLike, searchLike, searchLike, searchLike);
+    }
 
-    const total = await prisma.profile.count({ where });
+    // Count query
+    const countQuery = `
+      SELECT COUNT(DISTINCT u.id) as total
+      FROM users u
+      JOIN model_has_roles mhr ON u.id = mhr.model_id
+      JOIN roles r ON mhr.role_id = r.id
+      LEFT JOIN profiles p ON u.id = p.user_id
+      LEFT JOIN universities univ ON p.univ_id = univ.id
+      ${whereClause}
+    `;
 
-    const data = profiles.map((profile) => ({
-      id: profile.id,
-      name: profile.user?.name ?? "Unknown",
-      email: profile.user?.email ?? "",
-      phone: profile.no_wa ?? "",
-      gender: profile.jenis_kelamin ?? "",
-      photo: profile.foto ?? null,
-      university: profile.university
+    // Data query
+    const dataQuery = `
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        p.no_wa, 
+        p.jenis_kelamin, 
+        p.foto, 
+        univ.id as univ_id,
+        univ.name as univ_name,
+        c.city_name,
+        prov.prov_name
+      FROM users u
+      JOIN model_has_roles mhr ON u.id = mhr.model_id
+      JOIN roles r ON mhr.role_id = r.id
+      LEFT JOIN profiles p ON u.id = p.user_id
+      LEFT JOIN universities univ ON p.univ_id = univ.id
+      LEFT JOIN cities c ON univ.city = c.id
+      LEFT JOIN provinces prov ON univ.province = prov.id
+      ${whereClause}
+      ORDER BY ${orderByClause}
+      LIMIT ? OFFSET ?
+    `;
+
+    // Execute queries
+    const [totalResult, users] = await Promise.all([
+      prisma.$queryRawUnsafe<{ total: bigint }[]>(countQuery, ...queryParams),
+      prisma.$queryRawUnsafe<any[]>(dataQuery, ...queryParams, pageSize, offset)
+    ]);
+
+    const total = Number(totalResult[0]?.total || 0);
+
+    const data = users.map((user) => ({
+      id: user.id.toString(),
+      name: user.name,
+      email: user.email ?? "",
+      phone: user.no_wa ?? "",
+      gender: user.jenis_kelamin ?? "",
+      photo: user.foto ?? null,
+      university: user.univ_id
         ? {
-            id: profile.university.id,
-            name: profile.university.name,
-            city: profile.university.city?.city_name ?? "",
-            province: profile.university.province?.prov_name ?? "",
-          }
+          id: Number(user.univ_id),
+          name: user.univ_name,
+          city: user.city_name ?? "",
+          province: user.prov_name ?? "",
+        }
         : null,
     }));
 
@@ -97,10 +119,10 @@ export async function GET(request: Request) {
       pageSize,
       totalPages,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[mentors] Failed to fetch", error);
     return NextResponse.json(
-      { error: "Failed to fetch mentors" },
+      { error: "Failed to fetch mentors", details: error.message || String(error) },
       { status: 500 }
     );
   }

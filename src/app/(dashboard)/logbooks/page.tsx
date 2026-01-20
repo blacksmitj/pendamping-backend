@@ -16,7 +16,7 @@ export default function LogbooksPage() {
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [filterCondition, setFilterCondition] = useState("");
+
   const [filterVerified, setFilterVerified] = useState("");
   const [filterDate, setFilterDate] = useState("");
 
@@ -32,7 +32,7 @@ export default function LogbooksPage() {
     search,
     sortBy,
     sortOrder,
-    filterCondition,
+
     filterVerified,
     filterDate,
   });
@@ -43,12 +43,7 @@ export default function LogbooksPage() {
   );
 
   const totalPages = logbookResponse?.totalPages ?? 1;
-  const conditionOptions = useMemo(() => {
-    const values = (logbookResponse?.data ?? [])
-      .map((item) => item.business_condition as string | null)
-      .filter((v): v is string => !!v);
-    return Array.from(new Set(values)).toSorted();
-  }, [logbookResponse]);
+
 
   const verifiedOptions = useMemo(() => {
     const values = (logbookResponse?.data ?? [])
@@ -109,29 +104,11 @@ export default function LogbooksPage() {
                 <SelectItem value="date">Sort: Tanggal</SelectItem>
                 <SelectItem value="verified">Sort: Status</SelectItem>
                 <SelectItem value="pendamping">Sort: Pendamping</SelectItem>
-                <SelectItem value="condition">Sort: Kondisi</SelectItem>
+
                 <SelectItem value="id_tkm">Sort: ID TKM</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={filterCondition}
-              onValueChange={(value) => {
-                setFilterCondition(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-52">
-                <SelectValue placeholder="Filter kondisi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua kondisi</SelectItem>
-                {conditionOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
             <Select
               value={filterVerified}
               onValueChange={(value) => {

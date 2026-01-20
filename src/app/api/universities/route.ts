@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "../../../../generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -16,21 +17,21 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
     const skip = (page - 1) * pageSize;
 
-    const orderBy =
+    const orderBy: Prisma.UniversityOrderByWithRelationInput =
       sortBy === "city"
-        ? { city: { city_name: sortOrder } }
+        ? { city: { city_name: sortOrder as Prisma.SortOrder } }
         : sortBy === "province"
-        ? { province: { prov_name: sortOrder } }
-        : { name: sortOrder };
+          ? { province: { prov_name: sortOrder as Prisma.SortOrder } }
+          : { name: sortOrder as Prisma.SortOrder };
 
     const where = search
       ? {
-          OR: [
-            { name: { contains: search } },
-            { city: { city_name: { contains: search } } },
-            { province: { prov_name: { contains: search } } },
-          ],
-        }
+        OR: [
+          { name: { contains: search } },
+          { city: { city_name: { contains: search } } },
+          { province: { prov_name: { contains: search } } },
+        ],
+      }
       : undefined;
 
     const [universities, total] = await Promise.all([

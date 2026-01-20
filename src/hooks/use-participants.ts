@@ -11,6 +11,9 @@ const buildQueryString = (params: ListQueryParams) => {
   if (params.search) searchParams.set("search", params.search);
   if (params.sortBy) searchParams.set("sortBy", params.sortBy);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  if (params.status) searchParams.set("status", params.status);
+  if (params.province) searchParams.set("province", params.province);
+  if (params.city) searchParams.set("city", params.city);
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";

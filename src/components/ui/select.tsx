@@ -32,22 +32,30 @@ function collectConfig(nodes: React.ReactNode): ParsedConfig {
     if (!React.isValidElement(child)) return;
 
     if (child.type === SelectItem) {
+      const props = child.props as any;
       config.items.push({
-        value: child.props.value,
-        children: child.props.children,
+        value: props.value,
+        children: props.children,
       });
     }
 
-    if (child.type === SelectTrigger && child.props.className) {
-      config.triggerClassName = child.props.className;
+    if (child.type === SelectTrigger) {
+      const props = child.props as any;
+      if (props.className) {
+        config.triggerClassName = props.className;
+      }
     }
 
-    if (child.type === SelectValue && child.props.placeholder) {
-      config.placeholder = child.props.placeholder;
+    if (child.type === SelectValue) {
+      const props = child.props as any;
+      if (props.placeholder) {
+        config.placeholder = props.placeholder;
+      }
     }
 
-    if (child.props?.children) {
-      const nested = collectConfig(child.props.children);
+    const props = child.props as any;
+    if (props?.children) {
+      const nested = collectConfig(props.children);
       config.items.push(...nested.items);
       config.triggerClassName =
         config.triggerClassName ?? nested.triggerClassName;
