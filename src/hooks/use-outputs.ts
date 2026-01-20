@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from "@tanstack/react-query";
-import { ApiListResponse, ListQueryParams, Participant } from "@/types/dashboard";
+import { ApiListResponse, CapaianOutput, ListQueryParams } from "@/types/dashboard";
 
 const buildQueryString = (params: ListQueryParams) => {
   const searchParams = new URLSearchParams();
@@ -11,27 +11,30 @@ const buildQueryString = (params: ListQueryParams) => {
   if (params.search) searchParams.set("search", params.search);
   if (params.sortBy) searchParams.set("sortBy", params.sortBy);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  if (params.filterCondition) searchParams.set("condition", params.filterCondition);
+  if (params.filterVerified) searchParams.set("verified", params.filterVerified);
+  if (params.filterDate) searchParams.set("date", params.filterDate);
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";
 };
 
-const fetchParticipants = async (
+const fetchOutputs = async (
   params: ListQueryParams
-): Promise<ApiListResponse<Participant>> => {
-  const response = await fetch(`/api/participants${buildQueryString(params)}`);
+): Promise<ApiListResponse<CapaianOutput>> => {
+  const response = await fetch(`/api/outputs${buildQueryString(params)}`);
 
   if (!response.ok) {
-    throw new Error("Unable to fetch participants");
+    throw new Error("Unable to fetch capaian output");
   }
 
   return response.json();
 };
 
-export function useParticipants(params: ListQueryParams) {
+export function useOutputs(params: ListQueryParams) {
   return useQuery({
-    queryKey: ["participants", params],
-    queryFn: () => fetchParticipants(params),
+    queryKey: ["outputs", params],
+    queryFn: () => fetchOutputs(params),
     placeholderData: (previousData) => previousData,
   });
 }

@@ -35,18 +35,21 @@ model Address {
   subdistrict    Subdistrict? @relation(fields: [subdistrict_id], references: [subdist_id])
 
   @@id([id, profile_id])
+  @@map("addresses")
 }
 
 model Batch {
   id        Int       @id @default(autoincrement())
   batchID   Int
   startdate DateTime? @db.Date
+
+  @@map("batch")
 }
 
 model CapaianOutput {
   id                           String           @unique @db.VarChar(255)
   id_pendamping                BigInt?
-  id_tkm                       String           @db.VarChar(64)
+  id_tkm                       Int              @db.Int
   month_report                 Int
   bookkeeping_cashflow         String?          @db.VarChar(50)
   bookkeeping_income_statement String?          @db.VarChar(50)
@@ -66,19 +69,25 @@ model CapaianOutput {
   isverified                   String?          @default("pending") @db.VarChar(25)
   lpj                          Lpj?
   note_verified                String?          @db.Text
+  pendamping                   User?            @relation(fields: [id_pendamping], references: [id])
+  peserta                      Peserta          @relation(fields: [id_tkm], references: [id_tkm])
   tkm_new_employee             TkmNewEmployee[]
 
   @@id([id, id_tkm])
+  @@map("capaian_output")
 }
 
 model City {
-  id         String     @id @db.VarChar(25)
-  prov_id    String?    @db.VarChar(25)
-  city_name  String?
-  city_merge String?
-  province   Province?  @relation(fields: [prov_id], references: [id])
-  districts  District[]
-  addresses  Address[]
+  id           String       @id @db.VarChar(25)
+  prov_id      String?      @db.VarChar(25)
+  city_name    String?
+  city_merge   String?
+  province     Province?    @relation(fields: [prov_id], references: [id])
+  districts    District[]
+  addresses    Address[]
+  universities University[]
+
+  @@map("cities")
 }
 
 model District {
@@ -88,6 +97,8 @@ model District {
   city         City?         @relation(fields: [city_id], references: [id])
   subdistricts Subdistrict[]
   addresses    Address[]
+
+  @@map("districts")
 }
 
 model FailedJob {
@@ -98,6 +109,8 @@ model FailedJob {
   payload    String   @db.LongText
   exception  String   @db.LongText
   failed_at  DateTime @default(now()) @db.Timestamp()
+
+  @@map("failed_jobs")
 }
 
 model GroupPeserta {
@@ -106,23 +119,27 @@ model GroupPeserta {
   nama_group             String?
 
   @@id([id, id_tkm_pemula_terakhir])
+  @@map("group_peserta")
 }
 
 model LogAktifitas {
   id         BigInt    @id @default(autoincrement())
-  user_id    Int?
+  user_id    BigInt?
   aktifitas  String?   @db.Text
   data_awal  String?   @db.Text
   data_akhir String?   @db.Text
   keterangan String?   @db.Text
   created_at DateTime?
   updated_at DateTime?
+  user       User?     @relation(fields: [user_id], references: [id])
+
+  @@map("log_aktifitas")
 }
 
 model LogbookHarian {
   id                 String    @db.VarChar(255)
-  id_pendamping      Int
-  id_tkm             String    @db.VarChar(100)
+  id_pendamping      BigInt
+  id_tkm             Int       @db.Int
   activitySummary    String?   @db.Text
   deliveryMethod     String?   @db.VarChar(100)
   documentationFiles String?   @db.Text
@@ -144,14 +161,19 @@ model LogbookHarian {
   groupID            Int?
   month_report       Int?
   note_verified      String?   @db.Text
+  pendamping         User      @relation(fields: [id_pendamping], references: [id])
+  peserta            Peserta   @relation(fields: [id_tkm], references: [id_tkm])
 
   @@id([id, id_pendamping, id_tkm])
+  @@map("logbook_harian")
 }
 
 model Migration {
   id        Int    @id @default(autoincrement())
   migration String
   batch     Int
+
+  @@map("migrations")
 }
 
 model ModelHasPermission {
@@ -162,6 +184,7 @@ model ModelHasPermission {
 
   @@id([permission_id, model_id, model_type])
   @@index([model_id, model_type])
+  @@map("model_has_permissions")
 }
 
 model ModelHasRole {
@@ -173,12 +196,15 @@ model ModelHasRole {
 
   @@id([role_id, model_id, model_type])
   @@index([model_id, model_type])
+  @@map("model_has_roles")
 }
 
 model PasswordResetToken {
   email      String    @id
   token      String
   created_at DateTime? @db.Timestamp()
+
+  @@map("password_reset_tokens")
 }
 
 model Permission {
@@ -191,6 +217,7 @@ model Permission {
   role_has_permission  RoleHasPermission[]
 
   @@unique([name, guard_name])
+  @@map("permissions")
 }
 
 model PersonalAccessToken {
@@ -206,111 +233,120 @@ model PersonalAccessToken {
   updated_at     DateTime? @db.Timestamp()
 
   @@index([tokenable_type, tokenable_id])
+  @@map("personal_access_tokens")
 }
 
 model Peserta {
-  no                                                    Int       @id @default(autoincrement())
-  status                                                String?   @db.VarChar(50)
-  nama                                                  String?   @db.VarChar(200)
-  link_detail_tkm                                       String?   @db.Text
+  no                                                    Int             @id @default(autoincrement())
+  status                                                String?         @db.VarChar(50)
+  nama                                                  String?         @db.VarChar(200)
+  link_detail_tkm                                       String?         @db.Text
   apakah_sudah_submit_pendaftaran                       Boolean?
-  tanggal_submit_pendaftaran                            DateTime? @db.Date
-  id_tkm                                                Int?
-  tanggal_daftar                                        DateTime? @db.Date
-  id_pendaftar                                          Int?
-  nik                                                   String?   @db.VarChar(20)
-  nama_usaha                                            String?   @db.VarChar(200)
-  aktivitas_saat_ini                                    String?   @db.VarChar(200)
-  no_kk                                                 String?   @db.VarChar(20)
-  upload_kartu_keluarga                                 String?   @db.Text
-  pendidikan_terakhir                                   String?   @db.VarChar(100)
-  alamat_ktp                                            String?   @db.Text
-  provinsi_ktp                                          String?   @db.VarChar(100)
-  kota_ktp                                              String?   @db.VarChar(100)
-  kecamatan_ktp                                         String?   @db.VarChar(100)
-  kelurahan_ktp                                         String?   @db.VarChar(100)
-  kode_pos_ktp                                          String?   @db.VarChar(10)
+  tanggal_submit_pendaftaran                            DateTime?       @db.Date
+  id_tkm                                                Int?            @unique @db.Int
+  tanggal_daftar                                        DateTime?       @db.Date
+  id_pendaftar                                          BigInt?
+  nik                                                   String?         @db.VarChar(20)
+  nama_usaha                                            String?         @db.VarChar(200)
+  aktivitas_saat_ini                                    String?         @db.VarChar(200)
+  no_kk                                                 String?         @db.VarChar(20)
+  upload_kartu_keluarga                                 String?         @db.Text
+  pendidikan_terakhir                                   String?         @db.VarChar(100)
+  alamat_ktp                                            String?         @db.Text
+  provinsi_ktp                                          String?         @db.VarChar(100)
+  kota_ktp                                              String?         @db.VarChar(100)
+  kecamatan_ktp                                         String?         @db.VarChar(100)
+  kelurahan_ktp                                         String?         @db.VarChar(100)
+  kode_pos_ktp                                          String?         @db.VarChar(10)
   alamat_domisili_dan_alamat_ktp_sama                   Boolean?
-  alamat_domisili                                       String?   @db.Text
-  provinsi_domisili                                     String?   @db.VarChar(100)
-  kota_domisili                                         String?   @db.VarChar(100)
-  kecamatan_domisili                                    String?   @db.VarChar(100)
-  kelurahan_domisili                                    String?   @db.VarChar(100)
-  kode_pos_domisili                                     String?   @db.VarChar(10)
+  alamat_domisili                                       String?         @db.Text
+  provinsi_domisili                                     String?         @db.VarChar(100)
+  kota_domisili                                         String?         @db.VarChar(100)
+  kecamatan_domisili                                    String?         @db.VarChar(100)
+  kelurahan_domisili                                    String?         @db.VarChar(100)
+  kode_pos_domisili                                     String?         @db.VarChar(10)
   penyandang_disabilitas                                Boolean?
-  jenis_disabilitas                                     String?   @db.VarChar(150)
-  link_ktp                                              String?   @db.Text
-  link_pas_foto                                         String?   @db.Text
-  jenis_medsos                                          String?   @db.VarChar(100)
-  nama_medsos                                           String?   @db.VarChar(100)
-  link_media_sosial                                     String?   @db.Text
-  no_whatsapp                                           String?   @db.VarChar(20)
-  nama_kerabat_1                                        String?   @db.VarChar(200)
-  no_kerabat_1                                          String?   @db.VarChar(20)
-  status_kerabat_1                                      String?   @db.VarChar(100)
-  nama_kerabat_2                                        String?   @db.VarChar(200)
-  no_kerabat_2                                          String?   @db.VarChar(20)
-  status_kerabat_2                                      String?   @db.VarChar(100)
-  tempat_lahir                                          String?   @db.VarChar(100)
-  tgl_lahir                                             DateTime? @db.Date
+  jenis_disabilitas                                     String?         @db.VarChar(150)
+  link_ktp                                              String?         @db.Text
+  link_pas_foto                                         String?         @db.Text
+  jenis_medsos                                          String?         @db.VarChar(100)
+  nama_medsos                                           String?         @db.VarChar(100)
+  link_media_sosial                                     String?         @db.Text
+  no_whatsapp                                           String?         @db.VarChar(20)
+  nama_kerabat_1                                        String?         @db.VarChar(200)
+  no_kerabat_1                                          String?         @db.VarChar(20)
+  status_kerabat_1                                      String?         @db.VarChar(100)
+  nama_kerabat_2                                        String?         @db.VarChar(200)
+  no_kerabat_2                                          String?         @db.VarChar(20)
+  status_kerabat_2                                      String?         @db.VarChar(100)
+  tempat_lahir                                          String?         @db.VarChar(100)
+  tgl_lahir                                             DateTime?       @db.Date
   umur                                                  Int?
-  nomor_nib                                             String?   @db.VarChar(50)
-  sektor_usaha                                          String?   @db.VarChar(100)
-  jenis_usaha                                           String?   @db.VarChar(100)
-  deskripsi_usaha                                       String?   @db.Text
-  produk_utama                                          String?   @db.VarChar(200)
-  lokasi_usaha                                          String?   @db.VarChar(200)
-  kepemilikan_lokasi_usaha                              String?   @db.VarChar(100)
+  nomor_nib                                             String?         @db.VarChar(50)
+  sektor_usaha                                          String?         @db.VarChar(100)
+  jenis_usaha                                           String?         @db.VarChar(100)
+  deskripsi_usaha                                       String?         @db.Text
+  produk_utama                                          String?         @db.VarChar(200)
+  lokasi_usaha                                          String?         @db.VarChar(200)
+  kepemilikan_lokasi_usaha                              String?         @db.VarChar(100)
   alamat_usaha_dan_alamat_domisili_sama                 Boolean?
-  alamat_usaha                                          String?   @db.Text
-  provinsi_usaha                                        String?   @db.VarChar(100)
-  kota_usaha                                            String?   @db.VarChar(100)
-  kecamatan_usaha                                       String?   @db.VarChar(100)
-  kelurahan_usaha                                       String?   @db.VarChar(100)
-  kode_pos_usaha                                        String?   @db.VarChar(10)
-  saluran_pemasaran                                     String?   @db.Text
-  wilayah_pemasaran                                     String?   @db.Text
-  wilayah_negara_pemasaran                              String?   @db.Text
-  mitra_usaha                                           String?   @db.VarChar(200)
+  alamat_usaha                                          String?         @db.Text
+  provinsi_usaha                                        String?         @db.VarChar(100)
+  kota_usaha                                            String?         @db.VarChar(100)
+  kecamatan_usaha                                       String?         @db.VarChar(100)
+  kelurahan_usaha                                       String?         @db.VarChar(100)
+  kode_pos_usaha                                        String?         @db.VarChar(10)
+  saluran_pemasaran                                     String?         @db.Text
+  wilayah_pemasaran                                     String?         @db.Text
+  wilayah_negara_pemasaran                              String?         @db.Text
+  mitra_usaha                                           String?         @db.VarChar(200)
   jumlah_mitra_usaha                                    Int?
-  omset_per_periode                                     Decimal?  @db.Decimal(15, 2)
-  laba_per_periode                                      Decimal?  @db.Decimal(15, 2)
+  omset_per_periode                                     Decimal?        @db.Decimal(15, 2)
+  laba_per_periode                                      Decimal?        @db.Decimal(15, 2)
   jumlah_produk_per_periode                             Int?
-  satuan_jumlah_produk_per_periode                      String?   @db.VarChar(50)
-  dokumen_surat_permohonan_bantuan                      String?   @db.Text
-  dokumen_surat_pernyataan_kesanggupan                  String?   @db.Text
-  dokumen_profil_usaha                                  String?   @db.Text
-  dokumen_bmc_strategi_model_usaha                      String?   @db.Text
-  dokumen_rab                                           String?   @db.Text
-  dokumen_rencana_pengembangan_usaha                    String?   @db.Text
-  link_video                                            String?   @db.Text
-  foto_usaha                                            String?   @db.Text
-  dokumen_pencatatan_keuangan                           String?   @db.Text
-  lpj_tkm_pemula_2024                                   String?   @db.Text
-  lpj_tkm_pemula_2024_diupload_dari_tkm_pemula_terakhir String?   @db.Text
-  bast_tkm_pemula_2024                                  String?   @db.Text
-  dokumentasi_usaha_tkm_pemula_2024                     String?   @db.Text
-  dokumen_nib                                           String?   @db.Text
-  nomor_dokumen_nib                                     String?   @db.VarChar(50)
-  nama_usaha_dokumen_nib                                String?   @db.VarChar(200)
-  dokumen_legalitas                                     String?   @db.Text
-  nomor_dokumen_legalitas                               String?   @db.VarChar(50)
-  nama_dokumen_legalitas                                String?   @db.VarChar(200)
-  dokumen_sku                                           String?   @db.Text
-  nomor_dokumen_sku                                     String?   @db.VarChar(50)
-  tanggal_dokumen_sku                                   DateTime? @db.Date
-  kelurahan_dokumen_sku                                 String?   @db.VarChar(100)
-  pejabat_penandatangan_dokumen_sku                     String?   @db.VarChar(200)
-  pleno                                                 String?   @db.VarChar(100)
-  ptn_pts                                               String?   @db.VarChar(100)
-  batch_pembekalan                                      String?   @db.VarChar(50)
+  satuan_jumlah_produk_per_periode                      String?         @db.VarChar(50)
+  dokumen_surat_permohonan_bantuan                      String?         @db.Text
+  dokumen_surat_pernyataan_kesanggupan                  String?         @db.Text
+  dokumen_profil_usaha                                  String?         @db.Text
+  dokumen_bmc_strategi_model_usaha                      String?         @db.Text
+  dokumen_rab                                           String?         @db.Text
+  dokumen_rencana_pengembangan_usaha                    String?         @db.Text
+  link_video                                            String?         @db.Text
+  foto_usaha                                            String?         @db.Text
+  dokumen_pencatatan_keuangan                           String?         @db.Text
+  lpj_tkm_pemula_2024                                   String?         @db.Text
+  lpj_tkm_pemula_2024_diupload_dari_tkm_pemula_terakhir String?         @db.Text
+  bast_tkm_pemula_2024                                  String?         @db.Text
+  dokumentasi_usaha_tkm_pemula_2024                     String?         @db.Text
+  dokumen_nib                                           String?         @db.Text
+  nomor_dokumen_nib                                     String?         @db.VarChar(50)
+  nama_usaha_dokumen_nib                                String?         @db.VarChar(200)
+  dokumen_legalitas                                     String?         @db.Text
+  nomor_dokumen_legalitas                               String?         @db.VarChar(50)
+  nama_dokumen_legalitas                                String?         @db.VarChar(200)
+  dokumen_sku                                           String?         @db.Text
+  nomor_dokumen_sku                                     String?         @db.VarChar(50)
+  tanggal_dokumen_sku                                   DateTime?       @db.Date
+  kelurahan_dokumen_sku                                 String?         @db.VarChar(100)
+  pejabat_penandatangan_dokumen_sku                     String?         @db.VarChar(200)
+  pleno                                                 String?         @db.VarChar(100)
+  ptn_pts                                               String?         @db.VarChar(100)
+  batch_pembekalan                                      String?         @db.VarChar(50)
   tenaga_kerja1_nama                                    String?
   tenaga_kerja1_nik                                     String?
+  user                                                  User?           @relation("PesertaPendaftar", fields: [id_pendaftar], references: [id])
+  capaianOutputs                                        CapaianOutput[]
+  logbookHarians                                        LogbookHarian[]
+  pesertaDetails                                        PesertaDetail[]
+  temuBisnis                                            TemuBisnis[]
+  userPesertas                                          UserPeserta[]
+
+  @@map("peserta")
 }
 
 model PesertaDetail {
   id                  Int       @id @default(autoincrement())
-  id_tkm              String    @db.VarChar(100)
+  id_tkm              Int       @db.Int
   communicationStatus String
   fundDisbursement    String
   presenceStatus      String
@@ -324,32 +360,40 @@ model PesertaDetail {
   updated_at          DateTime? @updatedAt @db.Timestamp()
   bmcFile             String?
   actionPlanFile      String?
+  peserta             Peserta   @relation(fields: [id_tkm], references: [id_tkm])
+
+  @@map("peserta_detail")
 }
 
 model Profile {
-  id            Int       @unique @default(autoincrement())
+  id            Int         @unique @default(autoincrement())
   user_id       BigInt
-  nik           String?   @db.VarChar(20)
-  no_wa         String?   @db.VarChar(20)
-  jenis_kelamin String?   @db.VarChar(10)
-  foto          String?   @db.Text
+  nik           String?     @db.VarChar(20)
+  no_wa         String?     @db.VarChar(20)
+  jenis_kelamin String?     @db.VarChar(10)
+  foto          String?     @db.Text
   tempat_lahir  String?
-  tanggal_lahir DateTime? @db.Date
+  tanggal_lahir DateTime?   @db.Date
   created_at    DateTime?
   updated_at    DateTime?
   univ_id       Int?
-  user          User      @relation(fields: [user_id], references: [id])
+  user          User        @relation(fields: [user_id], references: [id])
+  university    University? @relation(fields: [univ_id], references: [id])
   addresses     Address[]
 
   @@id([id, user_id])
+  @@map("profiles")
 }
 
 model Province {
-  id        String    @id @db.VarChar(25)
-  prov_name String?   @db.VarChar(50)
-  zone      String?   @db.VarChar(60)
-  cities    City[]
-  addresses Address[]
+  id           String       @id @db.VarChar(25)
+  prov_name    String?      @db.VarChar(50)
+  zone         String?      @db.VarChar(60)
+  cities       City[]
+  addresses    Address[]
+  universities University[]
+
+  @@map("provinces")
 }
 
 model Role {
@@ -360,8 +404,10 @@ model Role {
   updated_at           DateTime?           @db.Timestamp()
   model_has_roles      ModelHasRole[]
   role_has_permissions RoleHasPermission[]
+  role_sidebars        RoleSidebar[]
 
   @@unique([name, guard_name])
+  @@map("roles")
 }
 
 model RoleHasPermission {
@@ -371,26 +417,33 @@ model RoleHasPermission {
   role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@id([permission_id, role_id])
+  @@map("role_has_permissions")
 }
 
 model RoleSidebar {
   sidebar_id Int
-  role_id    Int
+  role_id    BigInt
+  sidebar    Sidebar @relation(fields: [sidebar_id], references: [id])
+  role       Role    @relation(fields: [role_id], references: [id])
 
   @@id([sidebar_id, role_id])
+  @@map("role_sidebar")
 }
 
 model Sidebar {
-  id         Int       @id @default(autoincrement())
-  sidebar    String?
-  icon       String?
-  link       String?
-  keterangan String?
-  urutan     Int?
-  isaktif    String?   @db.VarChar(3)
-  suburutan  Int?
-  created_at DateTime?
-  updated_at DateTime?
+  id            Int           @id @default(autoincrement())
+  sidebar       String?
+  icon          String?
+  link          String?
+  keterangan    String?
+  urutan        Int?
+  isaktif       String?       @db.VarChar(3)
+  suburutan     Int?
+  created_at    DateTime?
+  updated_at    DateTime?
+  role_sidebars RoleSidebar[]
+
+  @@map("sidebar")
 }
 
 model Subdistrict {
@@ -399,15 +452,21 @@ model Subdistrict {
   subdist_name String?
   district     District? @relation(fields: [dist_id], references: [dist_id])
   addresses    Address[]
+
+  @@map("subdistricts")
 }
 
 model TemuBisnis {
   id              Int       @id @default(autoincrement())
-  id_tkm          String?   @db.VarChar(25)
+  id_tkm          Int?      @db.Int
   reasonRecommend String?   @db.Text
   created_at      DateTime?
   updated_at      DateTime?
-  mentor_id       Int?
+  mentor_id       BigInt?
+  peserta         Peserta?  @relation(fields: [id_tkm], references: [id_tkm])
+  pendamping      User?     @relation(fields: [mentor_id], references: [id])
+
+  @@map("temu_bisnis")
 }
 
 model TkmNewEmployee {
@@ -432,14 +491,20 @@ model TkmNewEmployee {
   capaian_output    CapaianOutput @relation(fields: [capaian_output_id], references: [id])
 
   @@id([id, capaian_output_id])
+  @@map("tkm_new_employee")
 }
 
 model University {
-  id       Int     @id @default(autoincrement())
-  name     String
-  alamat   String? @db.Text
-  city     String  @db.VarChar(25)
-  province String  @db.VarChar(25)
+  id          Int       @id @default(autoincrement())
+  name        String
+  alamat      String?   @db.Text
+  city_id     String    @map("city") @db.VarChar(25)
+  province_id String    @map("province") @db.VarChar(25)
+  city        City      @relation(fields: [city_id], references: [id])
+  province    Province  @relation(fields: [province_id], references: [id])
+  profiles    Profile[]
+
+  @@map("universities")
 }
 
 model UploadReport {
@@ -450,37 +515,54 @@ model UploadReport {
   updated_at  DateTime?
   note        String?
   verified    TkmVerified? @default(F)
+  user        User?        @relation(fields: [admin_id], references: [id])
+
+  @@map("upload_report")
 }
 
 model UserPeserta {
-  admin_id       Int
-  user_id        Int?
-  id_tkm         String
+  admin_id       BigInt
+  user_id        BigInt?
+  id_tkm         Int
   created_at     DateTime?
   updated_at     DateTime?
   superadmin     Int?
   batch          Int?
   status_peserta UserPesertaStatus? @default(pending)
+  admin          User               @relation("UserPesertaAdmin", fields: [admin_id], references: [id])
+  user           User?              @relation("UserPesertaUser", fields: [user_id], references: [id])
+  peserta        Peserta            @relation(fields: [id_tkm], references: [id_tkm])
 
   @@id([admin_id, id_tkm])
+  @@map("user_peserta")
 }
 
 model User {
-  id                     BigInt         @id @default(autoincrement())
+  id                     BigInt          @id @default(autoincrement())
   name                   String
-  email                  String?        @unique
-  user_verified          String?        @default("F") @db.VarChar(2)
+  email                  String?         @unique
+  user_verified          String?         @default("F") @db.VarChar(2)
   password               String?
-  remember_token         String?        @db.VarChar(100)
+  remember_token         String?         @db.VarChar(100)
   api_token              String?
-  created_at             DateTime?      @db.Timestamp()
-  updated_at             DateTime?      @db.Timestamp()
+  created_at             DateTime?       @db.Timestamp()
+  updated_at             DateTime?       @db.Timestamp()
   verified_by            String?
-  verified_at            DateTime?      @db.Timestamp()
-  token_kemnaker         String?        @db.Text
-  refresh_token_kemnaker String?        @db.Text
+  verified_at            DateTime?       @db.Timestamp()
+  token_kemnaker         String?         @db.Text
+  refresh_token_kemnaker String?         @db.Text
   profiles               Profile[]
   model_has_roles        ModelHasRole[]
+  logAktifitas           LogAktifitas[]
+  logbookHarians         LogbookHarian[]
+  capaianOutputs         CapaianOutput[]
+  temuBisnis             TemuBisnis[]
+  uploadReports          UploadReport[]
+  userPesertaAdmins      UserPeserta[]   @relation("UserPesertaAdmin")
+  userPesertaUsers       UserPeserta[]   @relation("UserPesertaUser")
+  pesertaPendaftar       Peserta[]       @relation("PesertaPendaftar")
+
+  @@map("users")
 }
 
 enum Lpj {

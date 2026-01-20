@@ -7,7 +7,8 @@ const adapter = new PrismaMariaDb({
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  connectionLimit: 5,
+  // Increase pool size to reduce wait timeouts under concurrent requests.
+  connectionLimit: 15,
 });
 const prisma = new PrismaClient({ adapter });
 
