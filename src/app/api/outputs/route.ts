@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "../../../../generated/prisma/client";
+import { prisma, Prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -21,185 +20,133 @@ export async function GET(request: Request) {
     const filterVerified = searchParams.get("verified") ?? "";
     const filterDate = searchParams.get("date") ?? "";
 
-    const orderBy: Prisma.CapaianOutputOrderByWithRelationInput =
-      sortBy === "verified"
-        ? { isverified: sortOrder as Prisma.SortOrder }
-        : sortBy === "pendamping"
-          ? { id_pendamping: sortOrder as Prisma.SortOrder }
-          : sortBy === "id_tkm"
-            ? { id_tkm: sortOrder as Prisma.SortOrder }
-            : sortBy === "condition"
-              ? { business_condition: sortOrder as Prisma.SortOrder }
-              : { updated_at: sortOrder as Prisma.SortOrder };
+    // Mapping sort columns to new schema fields
+    // month_report -> report_month (and report_year)
+    // verified -> is_verified
+    // pendamping -> mentor_id
+    // id_tkm -> participant_id
+    // condition -> business_condition
+    
+    const sortFieldMap: Record<string, string> = {
+      verified: 'is_verified',
+      pendamping: 'mentor_id',
+      id_tkm: 'participant_id',
+      condition: 'business_condition',
+      month_report: 'report_month'
+    };
+    
+    const mappedSortBy = sortFieldMap[sortBy] || 'updated_at';
 
-    let pendampingIdsFromSearch: bigint[] = [];
-    let tkmIdsFromSearch: number[] = [];
+    // Build Where Input
+    const where: Prisma.monthly_reportsWhereInput = {};
 
     if (search) {
-      const [pendampingUsers, pesertaMatches, universities] = await Promise.all([
-        prisma.user.findMany({
-          where: { name: { contains: search } },
-          select: { id: true },
-        }),
-        prisma.peserta.findMany({
-          where: { nama: { contains: search } },
-          select: { id_tkm: true },
-        }),
-        prisma.university.findMany({
-          where: { name: { contains: search } },
-          select: { id: true },
-        }),
-      ]);
-
-      pendampingIdsFromSearch = pendampingUsers.map((u) => u.id);
-      tkmIdsFromSearch = pesertaMatches
-        .map((p) => p.id_tkm)
-        .filter((id): id is number => Number.isFinite(id));
-
-      if (universities.length) {
-        const profiles = await prisma.profile.findMany({
-          where: { univ_id: { in: universities.map((u) => u.id) } },
-          select: { user_id: true },
-        });
-        pendampingIdsFromSearch.push(
-          ...profiles.map((p) => p.user_id).filter((id): id is bigint => typeof id === "bigint")
-        );
-      }
+        where.OR = [
+            { business_condition: { contains: search, mode: 'insensitive' } },
+            { obstacles: { contains: search, mode: 'insensitive' } },
+            // Search by participant name if possible via relation logic
+             { participants: { 
+                 profiles: {
+                     users: {
+                         username: { contains: search, mode: 'insensitive' }
+                     }
+                 }
+             } }
+        ];
+    }
+    
+    if (filterCondition) {
+        where.business_condition = { contains: filterCondition, mode: 'insensitive' };
+    }
+    if (filterVerified) {
+        where.is_verified = filterVerified;
+    }
+    if (filterDate && !Number.isNaN(Date.parse(filterDate))) {
+        const startDate = new Date(filterDate);
+        const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+        where.updated_at = {
+            gte: startDate,
+            lt: endDate
+        };
     }
 
-    const dateRange =
-      filterDate && !Number.isNaN(Date.parse(filterDate))
-        ? {
-          gte: new Date(filterDate),
-          lt: new Date(new Date(filterDate).getTime() + 24 * 60 * 60 * 1000),
-        }
-        : undefined;
+    const orderBy: Prisma.monthly_reportsOrderByWithRelationInput = {};
+    if (mappedSortBy === 'report_month') {
+        orderBy.report_year = sortOrder as Prisma.SortOrder;
+        // Secondary sort?
+    } else {
+        (orderBy as any)[mappedSortBy] = sortOrder;
+    }
 
-    const searchNumber = Number(search);
-    const hasSearchNumber = Number.isFinite(searchNumber);
-
-    const where = {
-      ...(search
-        ? {
-          OR: [
-            ...(hasSearchNumber ? [{ id_tkm: searchNumber }] : []),
-            { id_pendamping: { in: pendampingIdsFromSearch } },
-            { id_tkm: { in: tkmIdsFromSearch } },
-            { obstacle: { contains: search } },
-            { business_condition: { contains: search } },
-          ],
-        }
-        : undefined),
-      ...(filterCondition ? { business_condition: filterCondition } : undefined),
-      ...(filterVerified ? { isverified: filterVerified } : undefined),
-      ...(dateRange ? { updated_at: dateRange } : undefined),
-    } as const;
-
-    const outputs = await prisma.capaianOutput.findMany({
+    const outputs = await prisma.monthly_reports.findMany({
       take: pageSize,
       skip,
       orderBy,
       where,
-      select: {
-        id: true,
-        id_pendamping: true,
-        id_tkm: true,
-        month_report: true,
-        bookkeeping_cashflow: true,
-        bookkeeping_income_statement: true,
-        cashflow_proof_url: true,
-        income_proof_url: true,
-        sales_volume: true,
-        sales_volume_unit: true,
-        production_capacity: true,
-        production_capacity_unit: true,
-        marketing_area: true,
-        revenue: true,
-        obstacle: true,
-        business_condition: true,
-        created_at: true,
-        updated_at: true,
-        isverified: true,
-      },
-    });
-
-    const pendampingIds = Array.from(
-      new Set(outputs.map((item) => item.id_pendamping).filter((id): id is bigint => typeof id === "bigint"))
-    );
-
-    const tkmIds = Array.from(
-      new Set(outputs.map((item) => item.id_tkm).filter((id) => Number.isFinite(id)))
-    );
-
-    const [pendampingProfiles, peserta] = await Promise.all([
-      pendampingIds.length
-        ? prisma.profile.findMany({
-          where: { user_id: { in: pendampingIds } },
-          select: {
-            user_id: true,
-            univ_id: true,
-            user: { select: { name: true } },
+      include: {
+          participants: {
+              include: {
+                  profiles: {
+                      include: {
+                          users: true
+                      }
+                  },
+                  batches: true 
+              }
           },
-        })
-        : [],
-      tkmIds.length
-        ? prisma.peserta.findMany({
-          where: { id_tkm: { in: tkmIds } },
-          select: { id_tkm: true, nama: true },
-        })
-        : [],
-    ]);
-
-    const universityIds = Array.from(
-      new Set(
-        pendampingProfiles
-          .map((p) => p.univ_id)
-          .filter((id): id is number => Number.isFinite(id))
-      )
-    );
-
-    const universities = universityIds.length
-      ? await prisma.university.findMany({
-        where: { id: { in: universityIds } },
-        select: { id: true, name: true },
-      })
-      : [];
-
-    const pendampingMap = new Map(
-      pendampingProfiles.map((profile) => [
-        profile.user_id,
-        { name: profile.user?.name ?? null, univ_id: profile.univ_id ?? null },
-      ])
-    );
-
-    const pesertaMap = new Map(
-      peserta.map((item) => [item.id_tkm, item.nama ?? null])
-    );
-
-    const universityMap = new Map(universities.map((u) => [u.id, u.name]));
-
-    const data = outputs.map((item) => {
-      const pendampingId =
-        item.id_pendamping !== null ? Number(item.id_pendamping) : null;
-      const pendamping = item.id_pendamping
-        ? pendampingMap.get(item.id_pendamping) ?? null
-        : null;
-      const pendampingUniversity =
-        pendamping?.univ_id && universityMap.get(pendamping.univ_id)
-          ? universityMap.get(pendamping.univ_id)!
-          : null;
-
-      return {
-        ...item,
-        id_pendamping: pendampingId,
-        pendampingName: pendamping?.name ?? null,
-        pendampingUniversity,
-        tkmName: pesertaMap.get(item.id_tkm) ?? null,
-      };
+          mentors: {
+              include: {
+                  users: {
+                      include: {
+                          profiles: true
+                      }
+                  }
+              }
+          }
+      }
     });
 
-    const total = await prisma.capaianOutput.count({ where });
+    const total = await prisma.monthly_reports.count({ where });
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Transform data to match previous API response structure as much as possible
+    const data = outputs.map(item => {
+        const participantProfile = item.participants?.profiles;
+        const participantUser = participantProfile?.users;
+        const mentorUser = item.mentors?.users;
+        const mentorProfile = (mentorUser as any)?.profiles;
+        
+        return {
+            id: item.id,
+            id_pendamping: item.mentor_id, 
+            id_tkm: item.participants?.legacy_tkm_id, 
+            participant_id: item.participant_id, 
+            
+            month_report: item.report_month,
+            bookkeeping_cashflow: item.bookkeeping_cashflow ? "T" : "F",
+            bookkeeping_income_statement: item.bookkeeping_income_statement ? "T" : "F",
+            cashflow_proof_url: null, 
+            income_proof_url: null,
+            sales_volume: item.sales_volume ? Number(item.sales_volume) : 0,
+            sales_volume_unit: item.sales_unit,
+            production_capacity: item.production_capacity ? Number(item.production_capacity) : 0,
+            production_capacity_unit: item.production_unit,
+            marketing_area: item.marketing_area,
+            revenue: Number(item.revenue || 0),
+            obstacle: item.obstacles,
+            business_condition: item.business_condition,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            isverified: item.is_verified,
+            
+            // Extra fields for UI table
+            pendampingName: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+            pendampingPhoto: mentorProfile?.avatar_url || null,
+            pendampingUniversity: "",
+            tkmName: participantProfile?.full_name || participantUser?.username || "Unknown",
+            tkmPhoto: participantProfile?.avatar_url || null,
+        };
+    });
 
     return NextResponse.json({
       data,

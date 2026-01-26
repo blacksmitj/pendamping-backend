@@ -89,7 +89,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Geographic Distribution</CardTitle>
             <CardDescription>
-              Distribution of participants across Indonesian provinces.
+              Distribution of participants across Indonesian cities and regencies.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 pt-0">

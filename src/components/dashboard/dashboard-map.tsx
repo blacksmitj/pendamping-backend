@@ -5,7 +5,9 @@ import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from "react-lea
 import "leaflet/dist/leaflet.css";
 import { MapDistribution } from "@/types/dashboard";
 
-// Centroids for Indonesian Provinces
+import { REGENCY_COORDINATES } from "@/constants/regency-coordinates";
+
+// Centroids for Indonesian Provinces (Keep as fallback)
 const PROVINCE_COORDINATES: Record<string, [number, number]> = {
     "Aceh": [4.6951, 96.7494],
     "Sumatera Utara": [2.1154, 99.5451],
@@ -41,11 +43,16 @@ const PROVINCE_COORDINATES: Record<string, [number, number]> = {
     "Maluku Utara": [1.5709, 127.8080],
     "Papua Barat": [-1.3361, 133.1747],
     "Papua": [-4.2699, 138.0804],
-    // New Provinces (approximate)
     "Papua Selatan": [-7.4000, 139.0000],
     "Papua Tengah": [-4.0000, 136.0000],
     "Papua Pegunungan": [-4.5000, 139.5000],
     "Papua Barat Daya": [-1.0000, 131.5000]
+};
+
+// Combine for matching
+const COORDINATE_LOOKUP: Record<string, [number, number]> = {
+    ...PROVINCE_COORDINATES,
+    ...REGENCY_COORDINATES
 };
 
 interface DashboardMapProps {
@@ -69,21 +76,54 @@ export default function DashboardMap({ data }: DashboardMapProps) {
                 center={[-2.5489, 118.0149]}
                 zoom={5}
                 scrollWheelZoom={false}
-                className="h-[400px] w-full z-0"
+                className="h-[400px] w-full"
+                preferCanvas={true}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
                 {data.map((item) => {
-                    // Fuzzy match or exact match province name
-                    const coords = PROVINCE_COORDINATES[item.name] ||
-                        Object.entries(PROVINCE_COORDINATES).find(([k]) => k.includes(item.name))?.[1];
+                    // Standardize: KAB/KAB. -> KABUPATEN to match our constants
+                    const cleanName = item.name.toUpperCase()
+                        .replace(/^KAB\.?\s+/, "KABUPATEN ")
+                        .trim();
 
-                    if (!coords) return null;
+                    const searchName = cleanName.toLowerCase().replace(/\./g, '');
+                    let coords = COORDINATE_LOOKUP[cleanName];
+
+                    if (!coords) {
+                        // Try case-insensitive exact match
+                        const exactMatch = Object.entries(COORDINATE_LOOKUP).find(
+                            ([k]) => {
+                                const kClean = k.toLowerCase().trim().replace(/\./g, '');
+                                return kClean === searchName;
+                            }
+                        );
+                        if (exactMatch) {
+                            coords = exactMatch[1];
+                        } else {
+                            // Try fuzzy match on the core name (without KABUPATEN/KOTA)
+                            const coreName = searchName.replace(/^(kabupaten|kota)\s+/, '');
+                            const fuzzyMatch = Object.entries(COORDINATE_LOOKUP).find(
+                                ([k]) => {
+                                    const kClean = k.toLowerCase().trim().replace(/\./g, '');
+                                    const kCore = kClean.replace(/^(kabupaten|kota)\s+/, '');
+                                    return coreName === kCore;
+                                }
+                            );
+                            if (fuzzyMatch) coords = fuzzyMatch[1];
+                        }
+                    }
+
+                    if (!coords) {
+                        console.warn(`[DashboardMap] No coordinates found for: "${item.name}" (Clean: "${cleanName}")`);
+                        return null;
+                    }
 
                     // Scale radius by value
-                    const radius = Math.max(5, Math.min(30, Math.sqrt(item.value) * 3));
+                    // Since it's by regency, values are smaller, so we boost the multiplier
+                    const radius = Math.max(3, Math.min(25, Math.sqrt(item.value) * 4));
 
                     return (
                         <CircleMarker
@@ -100,7 +140,7 @@ export default function DashboardMap({ data }: DashboardMapProps) {
                             <Tooltip direction="top" offset={[0, -10]} opacity={1}>
                                 <div className="flex flex-col items-center">
                                     <span className="font-bold text-sm">{item.name}</span>
-                                    <span className="text-xs text-muted-foreground">{item.value} Participants</span>
+                                    <span className="text-xs text-muted-foreground">{item.value} TKML</span>
                                 </div>
                             </Tooltip>
                         </CircleMarker>

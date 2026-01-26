@@ -1,0 +1,2058 @@
+export const REGENCY_COORDINATES: Record<string, [number, number]> = {
+  "KABUPATEN SIMEULUE": [
+    2.61667,
+    96.08333
+  ],
+  "KABUPATEN ACEH SINGKIL": [
+    2.41667,
+    97.91667
+  ],
+  "KABUPATEN ACEH SELATAN": [
+    3.16667,
+    97.41667
+  ],
+  "KABUPATEN ACEH TENGGARA": [
+    3.36667,
+    97.7
+  ],
+  "KABUPATEN ACEH TIMUR": [
+    4.63333,
+    97.63333
+  ],
+  "KABUPATEN ACEH TENGAH": [
+    4.51,
+    96.855
+  ],
+  "KABUPATEN ACEH BARAT": [
+    4.45,
+    96.16667
+  ],
+  "KABUPATEN ACEH BESAR": [
+    5.38333,
+    95.51667
+  ],
+  "KABUPATEN PIDIE": [
+    5.08,
+    96.11
+  ],
+  "KABUPATEN BIREUEN": [
+    5.08333,
+    96.58333
+  ],
+  "KABUPATEN ACEH UTARA": [
+    4.97,
+    97.14
+  ],
+  "KABUPATEN ACEH BARAT DAYA": [
+    3.83333,
+    96.88333
+  ],
+  "KABUPATEN GAYO LUES": [
+    3.95,
+    97.39
+  ],
+  "KABUPATEN ACEH TAMIANG": [
+    4.25,
+    97.96667
+  ],
+  "KABUPATEN NAGAN RAYA": [
+    4.16667,
+    96.51667
+  ],
+  "KABUPATEN ACEH JAYA": [
+    4.86,
+    95.64
+  ],
+  "KABUPATEN BENER MERIAH": [
+    4.73015,
+    96.86156
+  ],
+  "KABUPATEN PIDIE JAYA": [
+    5.15,
+    96.21667
+  ],
+  "KOTA BANDA ACEH": [
+    5.54167,
+    95.33333
+  ],
+  "KOTA SABANG": [
+    5.82164,
+    95.31086
+  ],
+  "KOTA LANGSA": [
+    4.47,
+    97.93
+  ],
+  "KOTA LHOKSEUMAWE": [
+    5.13333,
+    97.06667
+  ],
+  "KOTA SUBULUSSALAM": [
+    2.75,
+    97.93333
+  ],
+  "KABUPATEN NIAS": [
+    1.03333,
+    97.76667
+  ],
+  "KABUPATEN MANDAILING NATAL": [
+    0.78378,
+    99.25495
+  ],
+  "KABUPATEN TAPANULI SELATAN": [
+    1.51667,
+    99.25
+  ],
+  "KABUPATEN TAPANULI TENGAH": [
+    1.9,
+    98.66667
+  ],
+  "KABUPATEN TAPANULI UTARA": [
+    2.0028,
+    99.0707
+  ],
+  "KABUPATEN TOBA SAMOSIR": [
+    2.39793,
+    99.21678
+  ],
+  "KABUPATEN LABUHAN BATU": [
+    2.26667,
+    100.1
+  ],
+  "KABUPATEN ASAHAN": [
+    2.78333,
+    99.55
+  ],
+  "KABUPATEN SIMALUNGUN": [
+    2.9,
+    99
+  ],
+  "KABUPATEN DAIRI": [
+    2.86667,
+    98.23333
+  ],
+  "KABUPATEN KARO": [
+    3.11667,
+    98.3
+  ],
+  "KABUPATEN DELI SERDANG": [
+    3.41667,
+    98.66667
+  ],
+  "KABUPATEN LANGKAT": [
+    3.71667,
+    98.21667
+  ],
+  "KABUPATEN NIAS SELATAN": [
+    0.77,
+    97.75
+  ],
+  "KABUPATEN HUMBANG HASUNDUTAN": [
+    2.26551,
+    98.50376
+  ],
+  "KABUPATEN PAKPAK BHARAT": [
+    2.56667,
+    98.28333
+  ],
+  "KABUPATEN SAMOSIR": [
+    2.64025,
+    98.71525
+  ],
+  "KABUPATEN SERDANG BEDAGAI": [
+    3.36667,
+    99.03333
+  ],
+  "KABUPATEN BATU BARA": [
+    3.16166,
+    99.52652
+  ],
+  "KABUPATEN PADANG LAWAS UTARA": [
+    1.46011,
+    99.67346
+  ],
+  "KABUPATEN PADANG LAWAS": [
+    1.44684,
+    99.99207
+  ],
+  "KABUPATEN LABUHAN BATU SELATAN": [
+    1.983,
+    100.0976
+  ],
+  "KABUPATEN LABUHAN BATU UTARA": [
+    2.33349,
+    99.63776
+  ],
+  "KABUPATEN NIAS UTARA": [
+    1.33037,
+    97.31964
+  ],
+  "KABUPATEN NIAS BARAT": [
+    1.05966,
+    97.58606
+  ],
+  "KOTA SIBOLGA": [
+    1.73333,
+    98.8
+  ],
+  "KOTA TANJUNG BALAI": [
+    2.95833,
+    99.79167
+  ],
+  "KOTA PEMATANG SIANTAR": [
+    2.96667,
+    99.05
+  ],
+  "KOTA TEBING TINGGI": [
+    3.325,
+    99.14167
+  ],
+  "KOTA MEDAN": [
+    3.65,
+    98.66667
+  ],
+  "KOTA BINJAI": [
+    3.606,
+    98.489
+  ],
+  "KOTA PADANG SIDEMPUAN": [
+    1.37375,
+    99.26843
+  ],
+  "KOTA GUNUNGSITOLI": [
+    1.32731,
+    97.55018
+  ],
+  "KABUPATEN KEPULAUAN MENTAWAI": [
+    1.98917,
+    99.51889
+  ],
+  "KABUPATEN PESISIR SELATAN": [
+    -1.58333,
+    100.85
+  ],
+  "KABUPATEN SOLOK": [
+    -0.96667,
+    100.81667
+  ],
+  "KABUPATEN SIJUNJUNG": [
+    -1.1827,
+    101.6056
+  ],
+  "KABUPATEN TANAH DATAR": [
+    -0.4555,
+    100.5771
+  ],
+  "KABUPATEN PADANG PARIAMAN": [
+    -0.6,
+    100.28333
+  ],
+  "KABUPATEN AGAM": [
+    -0.25,
+    100.16667
+  ],
+  "KABUPATEN LIMA PULUH KOTA": [
+    -0.0168,
+    100.5872
+  ],
+  "KABUPATEN PASAMAN": [
+    0.42503,
+    99.94606
+  ],
+  "KABUPATEN SOLOK SELATAN": [
+    -1.23333,
+    101.417
+  ],
+  "KABUPATEN DHARMASRAYA": [
+    -1.05,
+    101.367
+  ],
+  "KABUPATEN PASAMAN BARAT": [
+    0.28152,
+    99.51965
+  ],
+  "KOTA PADANG": [
+    -0.98333,
+    100.45
+  ],
+  "KOTA SOLOK": [
+    -0.76667,
+    100.61667
+  ],
+  "KOTA SAWAH LUNTO": [
+    -0.6,
+    100.75
+  ],
+  "KOTA PADANG PANJANG": [
+    -0.45,
+    100.43333
+  ],
+  "KOTA BUKITTINGGI": [
+    -0.275,
+    100.375
+  ],
+  "KOTA PAYAKUMBUH": [
+    -0.23333,
+    100.63333
+  ],
+  "KOTA PARIAMAN": [
+    -0.62682,
+    100.12047
+  ],
+  "KABUPATEN KUANTAN SINGINGI": [
+    -0.47532,
+    101.45857
+  ],
+  "KABUPATEN INDRAGIRI HULU": [
+    -0.55,
+    102.31667
+  ],
+  "KABUPATEN INDRAGIRI HILIR": [
+    -0.33333,
+    103.16667
+  ],
+  "KABUPATEN PELALAWAN": [
+    0.20822,
+    102.18607
+  ],
+  "KABUPATEN SIAK": [
+    0.97453,
+    102.01355
+  ],
+  "KABUPATEN KAMPAR": [
+    0.2344,
+    101.2131
+  ],
+  "KABUPATEN ROKAN HULU": [
+    0.88333,
+    100.48333
+  ],
+  "KABUPATEN BENGKALIS": [
+    0.9838,
+    102.5096
+  ],
+  "KABUPATEN ROKAN HILIR": [
+    2.16599,
+    100.82514
+  ],
+  "KABUPATEN KEPULAUAN MERANTI": [
+    0.97488,
+    102.69539
+  ],
+  "KOTA PEKANBARU": [
+    0.53333,
+    101.46667
+  ],
+  "KOTA DUMAI": [
+    1.61592,
+    101.4917
+  ],
+  "KABUPATEN KERINCI": [
+    -2.03333,
+    101.53333
+  ],
+  "KABUPATEN MERANGIN": [
+    -2.06933,
+    102.13303
+  ],
+  "KABUPATEN SAROLANGUN": [
+    -2.3,
+    102.65
+  ],
+  "KABUPATEN BATANG HARI": [
+    -1.75,
+    103.11667
+  ],
+  "KABUPATEN MUARO JAMBI": [
+    -1.55214,
+    103.82163
+  ],
+  "KABUPATEN TANJUNG JABUNG TIMUR": [
+    -1.13198,
+    103.61755
+  ],
+  "KABUPATEN TANJUNG JABUNG BARAT": [
+    -1.1544,
+    103.24402
+  ],
+  "KABUPATEN TEBO": [
+    -1.45576,
+    102.37473
+  ],
+  "KABUPATEN BUNGO": [
+    -1.50222,
+    101.96
+  ],
+  "KOTA JAMBI": [
+    -1.61667,
+    103.65
+  ],
+  "KOTA SUNGAI PENUH": [
+    -2.10896,
+    101.32175
+  ],
+  "KABUPATEN OGAN KOMERING ULU": [
+    -4.13333,
+    104.03333
+  ],
+  "KABUPATEN OGAN KOMERING ILIR": [
+    -3.36667,
+    105.36667
+  ],
+  "KABUPATEN MUARA ENIM": [
+    -4.2327,
+    103.6141
+  ],
+  "KABUPATEN LAHAT": [
+    -3.7864,
+    103.5428
+  ],
+  "KABUPATEN MUSI RAWAS": [
+    -3.08333,
+    103.2
+  ],
+  "KABUPATEN MUSI BANYU ASIN": [
+    -2.41667,
+    103.75
+  ],
+  "KABUPATEN BANYU ASIN": [
+    -2.88333,
+    104.38306
+  ],
+  "KABUPATEN OGAN KOMERING ULU SELATAN": [
+    -4.65728,
+    104.00659
+  ],
+  "KABUPATEN OGAN KOMERING ULU TIMUR": [
+    -3.85679,
+    104.75209
+  ],
+  "KABUPATEN OGAN ILIR": [
+    -3.43186,
+    104.62727
+  ],
+  "KABUPATEN EMPAT LAWANG": [
+    3.22667,
+    99.09256
+  ],
+  "KABUPATEN PENUKAL ABAB LEMATANG ILIR": [
+    -3.21342,
+    104.08722
+  ],
+  "KABUPATEN MUSI RAWAS UTARA": [
+    -2.48533,
+    103.29346
+  ],
+  "KOTA PALEMBANG": [
+    -3,
+    104.71667
+  ],
+  "KOTA PRABUMULIH": [
+    -3.46202,
+    104.2229
+  ],
+  "KOTA PAGAR ALAM": [
+    -4.13055,
+    103.26822
+  ],
+  "KOTA LUBUK LINGGAU": [
+    -3.29308,
+    102.85503
+  ],
+  "KABUPATEN BENGKULU SELATAN": [
+    -4.35,
+    103.03333
+  ],
+  "KABUPATEN REJANG LEBONG": [
+    -3.43333,
+    102.71667
+  ],
+  "KABUPATEN BENGKULU UTARA": [
+    -3.33333,
+    102.05
+  ],
+  "KABUPATEN KAUR": [
+    -4.78179,
+    103.36109
+  ],
+  "KABUPATEN SELUMA": [
+    -3.96644,
+    102.47429
+  ],
+  "KABUPATEN MUKOMUKO": [
+    -3.07438,
+    101.54766
+  ],
+  "KABUPATEN LEBONG": [
+    -3.24278,
+    102.3349
+  ],
+  "KABUPATEN KEPAHIANG": [
+    -3.60194,
+    102.56424
+  ],
+  "KABUPATEN BENGKULU TENGAH": [
+    -3.20679,
+    102.12616
+  ],
+  "KOTA BENGKULU": [
+    -3.81667,
+    102.31667
+  ],
+  "KABUPATEN LAMPUNG BARAT": [
+    -5.14904,
+    104.19309
+  ],
+  "KABUPATEN TANGGAMUS": [
+    -5.38508,
+    104.62349
+  ],
+  "KABUPATEN LAMPUNG SELATAN": [
+    -5.4531,
+    104.9877
+  ],
+  "KABUPATEN LAMPUNG TIMUR": [
+    -5.10273,
+    105.68003
+  ],
+  "KABUPATEN LAMPUNG TENGAH": [
+    -4.86667,
+    105.26667
+  ],
+  "KABUPATEN LAMPUNG UTARA": [
+    -4.81667,
+    104.8
+  ],
+  "KABUPATEN WAY KANAN": [
+    -4.44705,
+    104.52753
+  ],
+  "KABUPATEN TULANGBAWANG": [
+    -4.20604,
+    105.57999
+  ],
+  "KABUPATEN PESAWARAN": [
+    -5.4298,
+    105.17899
+  ],
+  "KABUPATEN PRINGSEWU": [
+    -5.42211,
+    104.93454
+  ],
+  "KABUPATEN MESUJI": [
+    -4.0439,
+    105.4013
+  ],
+  "KABUPATEN TULANG BAWANG BARAT": [
+    -4.43975,
+    105.0444
+  ],
+  "KABUPATEN PESISIR BARAT": [
+    -5.19323,
+    103.93976
+  ],
+  "KOTA BANDAR LAMPUNG": [
+    -5.41667,
+    105.25
+  ],
+  "KOTA METRO": [
+    -5.11856,
+    105.29949
+  ],
+  "KABUPATEN BANGKA": [
+    -1.91667,
+    105.93333
+  ],
+  "KABUPATEN BELITUNG": [
+    -2.86667,
+    107.7
+  ],
+  "KABUPATEN BANGKA BARAT": [
+    -1.95839,
+    105.53741
+  ],
+  "KABUPATEN BANGKA TENGAH": [
+    -2.33989,
+    106.1142
+  ],
+  "KABUPATEN BANGKA SELATAN": [
+    -2.66803,
+    106.01257
+  ],
+  "KABUPATEN BELITUNG TIMUR": [
+    -2.9627,
+    108.15216
+  ],
+  "KOTA PANGKAL PINANG": [
+    -2.13333,
+    106.13333
+  ],
+  "KABUPATEN KARIMUN": [
+    0.80764,
+    103.41911
+  ],
+  "KABUPATEN BINTAN": [
+    0.95,
+    104.61944
+  ],
+  "KABUPATEN NATUNA": [
+    4.71417,
+    107.97639
+  ],
+  "KABUPATEN LINGGA": [
+    0.2,
+    104.61667
+  ],
+  "KABUPATEN KEPULAUAN ANAMBAS": [
+    3,
+    106
+  ],
+  "KOTA BATAM": [
+    1.05211,
+    104.02851
+  ],
+  "KOTA TANJUNG PINANG": [
+    0.91683,
+    104.44329
+  ],
+  "KABUPATEN KEPULAUAN SERIBU": [
+    -5.5985,
+    106.55271
+  ],
+  "KOTA JAKARTA SELATAN": [
+    -6.266,
+    106.8135
+  ],
+  "KOTA JAKARTA TIMUR": [
+    -6.2521,
+    106.884
+  ],
+  "KOTA JAKARTA PUSAT": [
+    -6.1777,
+    106.8403
+  ],
+  "KOTA JAKARTA BARAT": [
+    -6.1676,
+    106.7673
+  ],
+  "KOTA JAKARTA UTARA": [
+    -6.1339,
+    106.8823
+  ],
+  "KABUPATEN BOGOR": [
+    -6.58333,
+    106.71667
+  ],
+  "KABUPATEN SUKABUMI": [
+    -7.06667,
+    106.7
+  ],
+  "KABUPATEN CIANJUR": [
+    -6.7725,
+    107.08306
+  ],
+  "KABUPATEN BANDUNG": [
+    -7.1,
+    107.6
+  ],
+  "KABUPATEN GARUT": [
+    -7.38333,
+    107.76667
+  ],
+  "KABUPATEN TASIKMALAYA": [
+    -7.5,
+    108.13333
+  ],
+  "KABUPATEN CIAMIS": [
+    -7.28333,
+    108.41667
+  ],
+  "KABUPATEN KUNINGAN": [
+    -7,
+    108.55
+  ],
+  "KABUPATEN CIREBON": [
+    -6.8,
+    108.56667
+  ],
+  "KABUPATEN MAJALENGKA": [
+    -6.81667,
+    108.28333
+  ],
+  "KABUPATEN SUMEDANG": [
+    -6.81667,
+    107.98333
+  ],
+  "KABUPATEN INDRAMAYU": [
+    -6.45,
+    108.16667
+  ],
+  "KABUPATEN SUBANG": [
+    -6.50833,
+    107.7025
+  ],
+  "KABUPATEN PURWAKARTA": [
+    -6.58333,
+    107.45
+  ],
+  "KABUPATEN KARAWANG": [
+    -6.26667,
+    107.41667
+  ],
+  "KABUPATEN BEKASI": [
+    -6.24667,
+    107.10833
+  ],
+  "KABUPATEN BANDUNG BARAT": [
+    -6.83333,
+    107.48333
+  ],
+  "KABUPATEN PANGANDARAN": [
+    -7.6673,
+    108.64037
+  ],
+  "KOTA BOGOR": [
+    -6.59167,
+    106.8
+  ],
+  "KOTA SUKABUMI": [
+    -6.95,
+    106.93333
+  ],
+  "KOTA BANDUNG": [
+    -6.9175,
+    107.62444
+  ],
+  "KOTA CIREBON": [
+    -6.75,
+    108.55
+  ],
+  "KOTA BEKASI": [
+    -6.28333,
+    106.98333
+  ],
+  "KOTA DEPOK": [
+    -6.4,
+    106.81667
+  ],
+  "KOTA CIMAHI": [
+    -6.89167,
+    107.55
+  ],
+  "KOTA TASIKMALAYA": [
+    -7.35,
+    108.21667
+  ],
+  "KOTA BANJAR": [
+    -7.36996,
+    108.53209
+  ],
+  "KABUPATEN CILACAP": [
+    -7.57417,
+    108.98861
+  ],
+  "KABUPATEN BANYUMAS": [
+    -7.45,
+    109.16667
+  ],
+  "KABUPATEN PURBALINGGA": [
+    -7.28417,
+    109.35028
+  ],
+  "KABUPATEN BANJARNEGARA": [
+    -7.35111,
+    109.5875
+  ],
+  "KABUPATEN KEBUMEN": [
+    -7.63917,
+    109.66056
+  ],
+  "KABUPATEN PURWOREJO": [
+    -7.7,
+    109.96667
+  ],
+  "KABUPATEN WONOSOBO": [
+    -7.36139,
+    109.92667
+  ],
+  "KABUPATEN MAGELANG": [
+    -7.4275,
+    110.16194
+  ],
+  "KABUPATEN BOYOLALI": [
+    -7.5,
+    110.7
+  ],
+  "KABUPATEN KLATEN": [
+    -7.68333,
+    110.61667
+  ],
+  "KABUPATEN SUKOHARJO": [
+    -7.68333,
+    110.83333
+  ],
+  "KABUPATEN WONOGIRI": [
+    -7.91667,
+    111
+  ],
+  "KABUPATEN KARANGANYAR": [
+    -7.62806,
+    111.0625
+  ],
+  "KABUPATEN SRAGEN": [
+    -7.41278,
+    110.935
+  ],
+  "KABUPATEN GROBOGAN": [
+    -7.11667,
+    110.91667
+  ],
+  "KABUPATEN BLORA": [
+    -7.06667,
+    111.38333
+  ],
+  "KABUPATEN REMBANG": [
+    -6.78333,
+    111.46667
+  ],
+  "KABUPATEN PATI": [
+    -6.76667,
+    111.1
+  ],
+  "KABUPATEN KUDUS": [
+    -6.8,
+    110.86667
+  ],
+  "KABUPATEN JEPARA": [
+    -6.58333,
+    110.76667
+  ],
+  "KABUPATEN DEMAK": [
+    -6.8993,
+    110.6122
+  ],
+  "KABUPATEN SEMARANG": [
+    -7.20667,
+    110.44139
+  ],
+  "KABUPATEN TEMANGGUNG": [
+    -7.25,
+    110.11667
+  ],
+  "KABUPATEN KENDAL": [
+    -7.0256,
+    110.1685
+  ],
+  "KABUPATEN BATANG": [
+    -7.03333,
+    109.88333
+  ],
+  "KABUPATEN PEKALONGAN": [
+    -7.0319,
+    109.624
+  ],
+  "KABUPATEN PEMALANG": [
+    -7.03333,
+    109.4
+  ],
+  "KABUPATEN TEGAL": [
+    -7.03333,
+    109.16667
+  ],
+  "KABUPATEN BREBES": [
+    -7.05,
+    108.9
+  ],
+  "KOTA MAGELANG": [
+    -7.5,
+    110.225
+  ],
+  "KOTA SURAKARTA": [
+    -7.55,
+    110.81667
+  ],
+  "KOTA SALATIGA": [
+    -7.33278,
+    110.48333
+  ],
+  "KOTA SEMARANG": [
+    -7.03333,
+    110.38333
+  ],
+  "KOTA PEKALONGAN": [
+    -6.9,
+    109.68333
+  ],
+  "KOTA TEGAL": [
+    -6.8686,
+    109.1129
+  ],
+  "KABUPATEN KULON PROGO": [
+    -7.645,
+    110.02694
+  ],
+  "KABUPATEN BANTUL": [
+    -7.9,
+    110.36667
+  ],
+  "KABUPATEN GUNUNG KIDUL": [
+    -7.98333,
+    110.61667
+  ],
+  "KABUPATEN SLEMAN": [
+    -7.68167,
+    110.32333
+  ],
+  "KOTA YOGYAKARTA": [
+    -7.8,
+    110.375
+  ],
+  "KABUPATEN PACITAN": [
+    -8.13333,
+    111.16667
+  ],
+  "KABUPATEN PONOROGO": [
+    -7.93333,
+    111.5
+  ],
+  "KABUPATEN TRENGGALEK": [
+    -8.16667,
+    111.61667
+  ],
+  "KABUPATEN TULUNGAGUNG": [
+    -8.11667,
+    111.91667
+  ],
+  "KABUPATEN BLITAR": [
+    -8.13333,
+    112.25
+  ],
+  "KABUPATEN KEDIRI": [
+    -7.83333,
+    112.16667
+  ],
+  "KABUPATEN MALANG": [
+    -8.16667,
+    112.66667
+  ],
+  "KABUPATEN LUMAJANG": [
+    -8.11667,
+    113.15
+  ],
+  "KABUPATEN JEMBER": [
+    -8.25,
+    113.65
+  ],
+  "KABUPATEN BANYUWANGI": [
+    -8.33333,
+    114.2
+  ],
+  "KABUPATEN BONDOWOSO": [
+    -7.9404,
+    113.9834
+  ],
+  "KABUPATEN SITUBONDO": [
+    -7.71667,
+    114.05
+  ],
+  "KABUPATEN PROBOLINGGO": [
+    -7.86667,
+    113.31667
+  ],
+  "KABUPATEN PASURUAN": [
+    -7.73333,
+    112.83333
+  ],
+  "KABUPATEN SIDOARJO": [
+    -7.45,
+    112.7
+  ],
+  "KABUPATEN MOJOKERTO": [
+    -7.55,
+    112.5
+  ],
+  "KABUPATEN JOMBANG": [
+    -7.55,
+    112.25
+  ],
+  "KABUPATEN NGANJUK": [
+    -7.6,
+    111.93333
+  ],
+  "KABUPATEN MADIUN": [
+    -7.61667,
+    111.65
+  ],
+  "KABUPATEN MAGETAN": [
+    -7.64472,
+    111.35917
+  ],
+  "KABUPATEN NGAWI": [
+    -7.47444,
+    111.33444
+  ],
+  "KABUPATEN BOJONEGORO": [
+    -7.25,
+    111.8
+  ],
+  "KABUPATEN TUBAN": [
+    -6.96667,
+    111.9
+  ],
+  "KABUPATEN LAMONGAN": [
+    -7.13333,
+    112.31667
+  ],
+  "KABUPATEN GRESIK": [
+    -7.1933,
+    112.553
+  ],
+  "KABUPATEN BANGKALAN": [
+    -7.05,
+    112.93333
+  ],
+  "KABUPATEN SAMPANG": [
+    -7.05,
+    113.25
+  ],
+  "KABUPATEN PAMEKASAN": [
+    -7.06667,
+    113.5
+  ],
+  "KABUPATEN SUMENEP": [
+    -7.11667,
+    114.33333
+  ],
+  "KOTA KEDIRI": [
+    -7.83333,
+    112.01667
+  ],
+  "KOTA BLITAR": [
+    -8.1,
+    112.16667
+  ],
+  "KOTA MALANG": [
+    -7.975,
+    112.63333
+  ],
+  "KOTA PROBOLINGGO": [
+    -7.78333,
+    113.21667
+  ],
+  "KOTA PASURUAN": [
+    -7.65,
+    112.9
+  ],
+  "KOTA MOJOKERTO": [
+    -7.46667,
+    112.43333
+  ],
+  "KOTA MADIUN": [
+    -7.63333,
+    111.53333
+  ],
+  "KOTA SURABAYA": [
+    -7.26667,
+    112.71667
+  ],
+  "KOTA BATU": [
+    -7.83272,
+    112.53751
+  ],
+  "KABUPATEN PANDEGLANG": [
+    -6.63333,
+    105.75
+  ],
+  "KABUPATEN LEBAK": [
+    -6.65,
+    106.21667
+  ],
+  "KABUPATEN TANGERANG": [
+    -6.2,
+    106.46667
+  ],
+  "KABUPATEN SERANG": [
+    -6.15,
+    106
+  ],
+  "KOTA TANGERANG": [
+    -6.17944,
+    106.62991
+  ],
+  "KOTA CILEGON": [
+    -6.01667,
+    106.01667
+  ],
+  "KOTA SERANG": [
+    -6.12563,
+    106.14999
+  ],
+  "KOTA TANGERANG SELATAN": [
+    -6.29373,
+    106.71244
+  ],
+  "KABUPATEN JEMBRANA": [
+    -8.3,
+    114.66667
+  ],
+  "KABUPATEN TABANAN": [
+    -8.43333,
+    115.06667
+  ],
+  "KABUPATEN BADUNG": [
+    -8.51667,
+    115.2
+  ],
+  "KABUPATEN GIANYAR": [
+    -8.46667,
+    115.28333
+  ],
+  "KABUPATEN KLUNGKUNG": [
+    -8.55,
+    115.4
+  ],
+  "KABUPATEN BANGLI": [
+    -8.28333,
+    115.35
+  ],
+  "KABUPATEN KARANG ASEM": [
+    -8.3891,
+    115.5393
+  ],
+  "KABUPATEN BULELENG": [
+    -8.25,
+    114.96667
+  ],
+  "KOTA DENPASAR": [
+    -8.66667,
+    115.21663
+  ],
+  "KABUPATEN LOMBOK BARAT": [
+    -8.69583,
+    116.11667
+  ],
+  "KABUPATEN LOMBOK TENGAH": [
+    -8.7,
+    116.3
+  ],
+  "KABUPATEN LOMBOK TIMUR": [
+    -8.53333,
+    116.53333
+  ],
+  "KABUPATEN SUMBAWA": [
+    -8.7439,
+    117.3324
+  ],
+  "KABUPATEN DOMPU": [
+    -8.5094,
+    118.4816
+  ],
+  "KABUPATEN BIMA": [
+    -8.6,
+    118.61667
+  ],
+  "KABUPATEN SUMBAWA BARAT": [
+    -8.75159,
+    116.92132
+  ],
+  "KABUPATEN LOMBOK UTARA": [
+    -8.35214,
+    116.40152
+  ],
+  "KOTA MATARAM": [
+    -8.5833,
+    116.1167
+  ],
+  "KOTA BIMA": [
+    -8.46728,
+    118.75259
+  ],
+  "KABUPATEN SUMBA BARAT": [
+    -9.56667,
+    119.45
+  ],
+  "KABUPATEN SUMBA TIMUR": [
+    -9.88333,
+    120.25
+  ],
+  "KABUPATEN KUPANG": [
+    -9.91667,
+    123.83333
+  ],
+  "KABUPATEN TIMOR TENGAH SELATAN": [
+    -9.83333,
+    124.4
+  ],
+  "KABUPATEN TIMOR TENGAH UTARA": [
+    -9.33136,
+    124.51904
+  ],
+  "KABUPATEN BELU": [
+    -9.41258,
+    124.95066
+  ],
+  "KABUPATEN ALOR": [
+    -8.3,
+    124.56667
+  ],
+  "KABUPATEN LEMBATA": [
+    -8.41396,
+    123.55225
+  ],
+  "KABUPATEN FLORES TIMUR": [
+    -8.24224,
+    122.96817
+  ],
+  "KABUPATEN SIKKA": [
+    -8.66667,
+    122.36667
+  ],
+  "KABUPATEN ENDE": [
+    -8.84056,
+    121.66389
+  ],
+  "KABUPATEN NGADA": [
+    -8.66667,
+    121
+  ],
+  "KABUPATEN MANGGARAI": [
+    -8.56667,
+    120.41667
+  ],
+  "KABUPATEN ROTE NDAO": [
+    -10.73617,
+    123.12054
+  ],
+  "KABUPATEN MANGGARAI BARAT": [
+    -8.64484,
+    119.88281
+  ],
+  "KABUPATEN SUMBA TENGAH": [
+    -9.62941,
+    119.61914
+  ],
+  "KABUPATEN SUMBA BARAT DAYA": [
+    -9.56216,
+    119.08905
+  ],
+  "KABUPATEN NAGEKEO": [
+    -8.8721,
+    121.20963
+  ],
+  "KABUPATEN MANGGARAI TIMUR": [
+    -8.55533,
+    120.59761
+  ],
+  "KABUPATEN SABU RAIJUA": [
+    -10.56286,
+    121.78894
+  ],
+  "KABUPATEN MALAKA": [
+    -9.5632,
+    124.89481
+  ],
+  "KOTA KUPANG": [
+    -10.21667,
+    123.6
+  ],
+  "KABUPATEN SAMBAS": [
+    1.41667,
+    109.33333
+  ],
+  "KABUPATEN BENGKAYANG": [
+    1.06911,
+    109.66393
+  ],
+  "KABUPATEN LANDAK": [
+    0.42373,
+    109.75917
+  ],
+  "KABUPATEN MEMPAWAH": [
+    0.25,
+    109.16667
+  ],
+  "KABUPATEN SANGGAU": [
+    0.25472,
+    110.45
+  ],
+  "KABUPATEN KETAPANG": [
+    -1.58333,
+    110.5
+  ],
+  "KABUPATEN SINTANG": [
+    -0.08333,
+    112.08333
+  ],
+  "KABUPATEN KAPUAS HULU": [
+    0.81667,
+    112.76667
+  ],
+  "KABUPATEN SEKADAU": [
+    0.03485,
+    110.95066
+  ],
+  "KABUPATEN MELAWI": [
+    -0.33617,
+    111.698
+  ],
+  "KABUPATEN KAYONG UTARA": [
+    -1.43711,
+    110.79781
+  ],
+  "KABUPATEN KUBU RAYA": [
+    0.01637,
+    109.33731
+  ],
+  "KOTA PONTIANAK": [
+    -0.08333,
+    109.36667
+  ],
+  "KOTA SINGKAWANG": [
+    0.90734,
+    109.00103
+  ],
+  "KABUPATEN KOTAWARINGIN BARAT": [
+    -2.4,
+    111.73333
+  ],
+  "KABUPATEN KOTAWARINGIN TIMUR": [
+    -2.08333,
+    112.75
+  ],
+  "KABUPATEN KAPUAS": [
+    -2.01667,
+    114.38333
+  ],
+  "KABUPATEN BARITO SELATAN": [
+    -1.86667,
+    114.73333
+  ],
+  "KABUPATEN BARITO UTARA": [
+    -0.98333,
+    115.1
+  ],
+  "KABUPATEN SUKAMARA": [
+    -2.62675,
+    111.23681
+  ],
+  "KABUPATEN LAMANDAU": [
+    -1.83828,
+    111.2869
+  ],
+  "KABUPATEN SERUYAN": [
+    -2.33333,
+    112.25
+  ],
+  "KABUPATEN KATINGAN": [
+    -2.06667,
+    113.4
+  ],
+  "KABUPATEN PULANG PISAU": [
+    -3.11858,
+    113.8623
+  ],
+  "KABUPATEN GUNUNG MAS": [
+    -0.95,
+    113.5
+  ],
+  "KABUPATEN BARITO TIMUR": [
+    -1.93333,
+    115.1
+  ],
+  "KABUPATEN MURUNG RAYA": [
+    -0.01667,
+    114.26667
+  ],
+  "KOTA PALANGKA RAYA": [
+    -1.76979,
+    113.73126
+  ],
+  "KABUPATEN TANAH LAUT": [
+    -3.88333,
+    114.86667
+  ],
+  "KABUPATEN KOTA BARU": [
+    -3,
+    116
+  ],
+  "KABUPATEN BANJAR": [
+    -3.31667,
+    115.08333
+  ],
+  "KABUPATEN BARITO KUALA": [
+    -3.08333,
+    114.61667
+  ],
+  "KABUPATEN TAPIN": [
+    -2.91667,
+    115.03333
+  ],
+  "KABUPATEN HULU SUNGAI SELATAN": [
+    -2.75,
+    115.2
+  ],
+  "KABUPATEN HULU SUNGAI TENGAH": [
+    -2.61667,
+    115.41667
+  ],
+  "KABUPATEN HULU SUNGAI UTARA": [
+    -2.45,
+    115.13333
+  ],
+  "KABUPATEN TABALONG": [
+    -1.88333,
+    115.5
+  ],
+  "KABUPATEN TANAH BUMBU": [
+    -3.45413,
+    115.70372
+  ],
+  "KABUPATEN BALANGAN": [
+    -2.32314,
+    115.62922
+  ],
+  "KOTA BANJARMASIN": [
+    -3.32444,
+    114.59102
+  ],
+  "KOTA BANJAR BARU": [
+    -3.41667,
+    114.83333
+  ],
+  "KABUPATEN PASER": [
+    -1.43517,
+    116.23535
+  ],
+  "KABUPATEN KUTAI BARAT": [
+    -0.59417,
+    115.51575
+  ],
+  "KABUPATEN KUTAI KARTANEGARA": [
+    -0.44019,
+    116.98139
+  ],
+  "KABUPATEN KUTAI TIMUR": [
+    1.03769,
+    117.83112
+  ],
+  "KABUPATEN BERAU": [
+    2,
+    117.3
+  ],
+  "KABUPATEN PENAJAM PASER UTARA": [
+    -1.25,
+    116.83333
+  ],
+  "KABUPATEN MAHAKAM HULU": [
+    0.37822,
+    115.38048
+  ],
+  "KOTA BALIKPAPAN": [
+    -1.16667,
+    116.88333
+  ],
+  "KOTA SAMARINDA": [
+    -0.43333,
+    117.18333
+  ],
+  "KOTA BONTANG": [
+    0.12526,
+    117.49603
+  ],
+  "KABUPATEN MALINAU": [
+    2.45,
+    115.68333
+  ],
+  "KABUPATEN BULUNGAN": [
+    3,
+    117.16667
+  ],
+  "KABUPATEN TANA TIDUNG": [
+    3.55,
+    117.25
+  ],
+  "KABUPATEN NUNUKAN": [
+    4.13333,
+    116.7
+  ],
+  "KOTA TARAKAN": [
+    3.36667,
+    117.6
+  ],
+  "KABUPATEN BOLAANG MONGONDOW": [
+    0.75,
+    124.08333
+  ],
+  "KABUPATEN MINAHASA": [
+    1.2537,
+    124.83
+  ],
+  "KABUPATEN KEPULAUAN SANGIHE": [
+    3.5,
+    125.55
+  ],
+  "KABUPATEN KEPULAUAN TALAUD": [
+    4.31178,
+    126.78085
+  ],
+  "KABUPATEN MINAHASA SELATAN": [
+    1.21291,
+    124.59708
+  ],
+  "KABUPATEN MINAHASA UTARA": [
+    1.4025,
+    124.96
+  ],
+  "KABUPATEN BOLAANG MONGONDOW UTARA": [
+    0.78527,
+    123.41766
+  ],
+  "KABUPATEN SIAU TAGULANDANG BIARO": [
+    2.11728,
+    125.37512
+  ],
+  "KABUPATEN MINAHASA TENGGARA": [
+    1.05633,
+    124.7925
+  ],
+  "KABUPATEN BOLAANG MONGONDOW SELATAN": [
+    0.40912,
+    123.75961
+  ],
+  "KABUPATEN BOLAANG MONGONDOW TIMUR": [
+    0.72073,
+    124.50256
+  ],
+  "KOTA MANADO": [
+    1.51667,
+    124.88333
+  ],
+  "KOTA BITUNG": [
+    1.48333,
+    125.15
+  ],
+  "KOTA TOMOHON": [
+    1.31307,
+    124.83404
+  ],
+  "KOTA KOTAMOBAGU": [
+    0.68915,
+    124.32678
+  ],
+  "KABUPATEN BANGGAI KEPULAUAN": [
+    -1.6424,
+    123.54881
+  ],
+  "KABUPATEN BANGGAI": [
+    -1.2835,
+    122.8892
+  ],
+  "KABUPATEN MOROWALI": [
+    -1.89342,
+    121.25473
+  ],
+  "KABUPATEN POSO": [
+    -1.65,
+    120.5
+  ],
+  "KABUPATEN DONGGALA": [
+    -0.58333,
+    119.85
+  ],
+  "KABUPATEN TOLI-TOLI": [
+    1.30862,
+    120.88643
+  ],
+  "KABUPATEN BUOL": [
+    0.75,
+    120.75
+  ],
+  "KABUPATEN PARIGI MOUTONG": [
+    0.3368,
+    120.17841
+  ],
+  "KABUPATEN TOJO UNA-UNA": [
+    -1.2036,
+    121.48201
+  ],
+  "KABUPATEN SIGI": [
+    -1.385,
+    119.96694
+  ],
+  "KABUPATEN BANGGAI LAUT": [
+    -1.61841,
+    123.49388
+  ],
+  "KABUPATEN MOROWALI UTARA": [
+    -1.7207,
+    121.24649
+  ],
+  "KOTA PALU": [
+    -0.86972,
+    119.9
+  ],
+  "KABUPATEN KEPULAUAN SELAYAR": [
+    -6.81667,
+    120.8
+  ],
+  "KABUPATEN BULUKUMBA": [
+    -5.41667,
+    120.23333
+  ],
+  "KABUPATEN BANTAENG": [
+    -5.48333,
+    119.98333
+  ],
+  "KABUPATEN JENEPONTO": [
+    -5.63333,
+    119.73333
+  ],
+  "KABUPATEN TAKALAR": [
+    -5.41667,
+    119.51667
+  ],
+  "KABUPATEN GOWA": [
+    -5.31667,
+    119.75
+  ],
+  "KABUPATEN SINJAI": [
+    -5.21667,
+    120.15
+  ],
+  "KABUPATEN MAROS": [
+    -5.05,
+    119.71667
+  ],
+  "KABUPATEN PANGKAJENE DAN KEPULAUAN": [
+    -4.7827,
+    119.5506
+  ],
+  "KABUPATEN BARRU": [
+    -4.43333,
+    119.68333
+  ],
+  "KABUPATEN BONE": [
+    -4.7,
+    120.13333
+  ],
+  "KABUPATEN SOPPENG": [
+    -4.3842,
+    119.89
+  ],
+  "KABUPATEN WAJO": [
+    -4,
+    120.16667
+  ],
+  "KABUPATEN SIDENRENG RAPPANG": [
+    -3.85,
+    119.96667
+  ],
+  "KABUPATEN PINRANG": [
+    -3.61667,
+    119.6
+  ],
+  "KABUPATEN ENREKANG": [
+    -3.5,
+    119.86667
+  ],
+  "KABUPATEN LUWU": [
+    -2.5577,
+    121.3242
+  ],
+  "KABUPATEN TANA TORAJA": [
+    -3.0024,
+    119.79655
+  ],
+  "KABUPATEN LUWU UTARA": [
+    -2.6,
+    120.25
+  ],
+  "KABUPATEN LUWU TIMUR": [
+    -2.50957,
+    120.3978
+  ],
+  "KABUPATEN TORAJA UTARA": [
+    -2.92738,
+    119.79218
+  ],
+  "KOTA MAKASSAR": [
+    -5.15,
+    119.45
+  ],
+  "KOTA PARE-PARE": [
+    -4.03333,
+    119.65
+  ],
+  "KOTA PALOPO": [
+    -2.97841,
+    120.11078
+  ],
+  "KABUPATEN BUTON": [
+    -5.31667,
+    122.58333
+  ],
+  "KABUPATEN MUNA": [
+    -4.96667,
+    122.66667
+  ],
+  "KABUPATEN KONAWE": [
+    -3.91717,
+    122.08823
+  ],
+  "KABUPATEN KOLAKA": [
+    -4.08333,
+    121.66667
+  ],
+  "KABUPATEN KONAWE SELATAN": [
+    -4.19191,
+    122.44854
+  ],
+  "KABUPATEN BOMBANA": [
+    -4.6257,
+    121.81641
+  ],
+  "KABUPATEN WAKATOBI": [
+    -5.31934,
+    123.5948
+  ],
+  "KABUPATEN KOLAKA UTARA": [
+    -3.10452,
+    121.12427
+  ],
+  "KABUPATEN BUTON UTARA": [
+    -5.01457,
+    122.93015
+  ],
+  "KABUPATEN KONAWE UTARA": [
+    -3.41552,
+    121.99081
+  ],
+  "KABUPATEN KOLAKA TIMUR": [
+    -4.01807,
+    121.86172
+  ],
+  "KABUPATEN KONAWE KEPULAUAN": [
+    -4.11656,
+    123.10181
+  ],
+  "KABUPATEN MUNA BARAT": [
+    -4.83333,
+    122.48333
+  ],
+  "KABUPATEN BUTON TENGAH": [
+    -5.31667,
+    122.33333
+  ],
+  "KABUPATEN BUTON SELATAN": [
+    -5.56667,
+    122.7
+  ],
+  "KOTA KENDARI": [
+    -3.98333,
+    122.5
+  ],
+  "KOTA BAUBAU": [
+    -5.477,
+    122.6166
+  ],
+  "KABUPATEN BOALEMO": [
+    0.62689,
+    122.3568
+  ],
+  "KABUPATEN GORONTALO": [
+    0.5728,
+    122.2337
+  ],
+  "KABUPATEN POHUWATO": [
+    0.7098,
+    121.59582
+  ],
+  "KABUPATEN BONE BOLANGO": [
+    0.50296,
+    123.27501
+  ],
+  "KABUPATEN GORONTALO UTARA": [
+    0.77,
+    122.31667
+  ],
+  "KOTA GORONTALO": [
+    0.53333,
+    123.1
+  ],
+  "KABUPATEN MAJENE": [
+    -3.15,
+    118.86667
+  ],
+  "KABUPATEN POLEWALI MANDAR": [
+    -3.3,
+    119.16667
+  ],
+  "KABUPATEN MAMASA": [
+    -2.96492,
+    119.30631
+  ],
+  "KABUPATEN MAMUJU": [
+    -2.5,
+    119.41667
+  ],
+  "KABUPATEN MAMUJU UTARA": [
+    -1.51639,
+    119.42139
+  ],
+  "KABUPATEN MAMUJU TENGAH": [
+    -2.8212,
+    119.2662
+  ],
+  "KABUPATEN MALUKU TENGGARA BARAT": [
+    -7.61186,
+    131.38
+  ],
+  "KABUPATEN MALUKU TENGGARA": [
+    -5.75,
+    132.73334
+  ],
+  "KABUPATEN MALUKU TENGAH": [
+    -3.29167,
+    128.9675
+  ],
+  "KABUPATEN BURU": [
+    -3.32767,
+    126.68413
+  ],
+  "KABUPATEN KEPULAUAN ARU": [
+    -6.17059,
+    134.46991
+  ],
+  "KABUPATEN SERAM BAGIAN BARAT": [
+    -3.1027,
+    128.42996
+  ],
+  "KABUPATEN SERAM BAGIAN TIMUR": [
+    -3.39851,
+    130.39166
+  ],
+  "KABUPATEN MALUKU BARAT DAYA": [
+    -7.8296,
+    126.17386
+  ],
+  "KABUPATEN BURU SELATAN": [
+    -3.52187,
+    126.59271
+  ],
+  "KOTA AMBON": [
+    -3.7,
+    128.18333
+  ],
+  "KOTA TUAL": [
+    -5.64301,
+    132.74934
+  ],
+  "KABUPATEN HALMAHERA BARAT": [
+    1.41709,
+    127.55264
+  ],
+  "KABUPATEN HALMAHERA TENGAH": [
+    0.48056,
+    128.25
+  ],
+  "KABUPATEN KEPULAUAN SULA": [
+    -1.8646,
+    125.69046
+  ],
+  "KABUPATEN HALMAHERA SELATAN": [
+    -0.3955,
+    127.90833
+  ],
+  "KABUPATEN HALMAHERA UTARA": [
+    1.73194,
+    128.00778
+  ],
+  "KABUPATEN HALMAHERA TIMUR": [
+    1.33517,
+    128.48627
+  ],
+  "KABUPATEN PULAU MOROTAI": [
+    2.19924,
+    128.40546
+  ],
+  "KABUPATEN PULAU TALIABU": [
+    -1.84578,
+    124.78992
+  ],
+  "KOTA TERNATE": [
+    0.89618,
+    127.31016
+  ],
+  "KOTA TIDORE KEPULAUAN": [
+    0.60962,
+    127.56981
+  ],
+  "KABUPATEN FAK-FAK": [
+    -2.92641,
+    132.29608
+  ],
+  "KABUPATEN KAIMANA": [
+    -3.66093,
+    133.77451
+  ],
+  "KABUPATEN TELUK WONDAMA": [
+    -2.7,
+    134.5
+  ],
+  "KABUPATEN TELUK BINTUNI": [
+    -1.88037,
+    133.33105
+  ],
+  "KABUPATEN MANOKWARI": [
+    -0.9,
+    133.75
+  ],
+  "KABUPATEN SORONG SELATAN": [
+    -1.50495,
+    132.28638
+  ],
+  "KABUPATEN SORONG": [
+    -1.16667,
+    131.5
+  ],
+  "KABUPATEN RAJA AMPAT": [
+    -0.5,
+    130
+  ],
+  "KABUPATEN TAMBRAUW": [
+    -0.60515,
+    132.48962
+  ],
+  "KABUPATEN MAYBRAT": [
+    -1.2155,
+    132.35092
+  ],
+  "KABUPATEN MANOKWARI SELATAN": [
+    -1.0798,
+    133.96729
+  ],
+  "KABUPATEN PEGUNUNGAN ARFAK": [
+    -0.93523,
+    133.89587
+  ],
+  "KOTA SORONG": [
+    -0.86507,
+    131.25153
+  ],
+  "KABUPATEN MERAUKE": [
+    -7.66667,
+    139.66667
+  ],
+  "KABUPATEN JAYAWIJAYA": [
+    -4.08333,
+    139.08333
+  ],
+  "KABUPATEN JAYAPURA": [
+    -3,
+    139.95
+  ],
+  "KABUPATEN NABIRE": [
+    -3.54016,
+    135.55511
+  ],
+  "KABUPATEN KEPULAUAN YAPEN": [
+    -1.78773,
+    136.27716
+  ],
+  "KABUPATEN BIAK NUMFOR": [
+    -1.03333,
+    136
+  ],
+  "KABUPATEN PANIAI": [
+    -3.9,
+    136.60001
+  ],
+  "KABUPATEN PUNCAK JAYA": [
+    -3.67241,
+    137.43896
+  ],
+  "KABUPATEN MIMIKA": [
+    -4.54357,
+    136.56555
+  ],
+  "KABUPATEN BOVEN DIGOEL": [
+    -5.70519,
+    140.36349
+  ],
+  "KABUPATEN MAPPI": [
+    -6.49971,
+    139.34441
+  ],
+  "KABUPATEN ASMAT": [
+    -5.3795,
+    138.46344
+  ],
+  "KABUPATEN YAHUKIMO": [
+    -4.60403,
+    139.58405
+  ],
+  "KABUPATEN PEGUNUNGAN BINTANG": [
+    -4.52167,
+    140.29541
+  ],
+  "KABUPATEN TOLIKARA": [
+    -3.42661,
+    137.41699
+  ],
+  "KABUPATEN SARMI": [
+    -2.41667,
+    139.08333
+  ],
+  "KABUPATEN KEEROM": [
+    -3.3,
+    140.61667
+  ],
+  "KABUPATEN WAROPEN": [
+    -2.286,
+    137.01837
+  ],
+  "KABUPATEN SUPIORI": [
+    -0.73881,
+    135.61111
+  ],
+  "KABUPATEN MAMBERAMO RAYA": [
+    -2.23561,
+    137.78229
+  ],
+  "KABUPATEN NDUGA": [
+    -4.45093,
+    138.10089
+  ],
+  "KABUPATEN LANNY JAYA": [
+    -3.91244,
+    138.28766
+  ],
+  "KABUPATEN MAMBERAMO TENGAH": [
+    -2.46064,
+    138.45245
+  ],
+  "KABUPATEN YALIMO": [
+    -3.86037,
+    138.47305
+  ],
+  "KABUPATEN PUNCAK": [
+    -4.14204,
+    137.09702
+  ],
+  "KABUPATEN DOGIYAI": [
+    -4.03186,
+    135.43945
+  ],
+  "KABUPATEN INTAN JAYA": [
+    -3.41016,
+    136.70837
+  ],
+  "KABUPATEN DEIYAI": [
+    -3.94737,
+    135.95032
+  ],
+  "KOTA JAYAPURA": [
+    -2.64647,
+    140.77779
+  ]
+};

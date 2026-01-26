@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "../../../../generated/prisma/client";
+import { prisma, Prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -21,183 +20,134 @@ export async function GET(request: Request) {
     const filterVerified = searchParams.get("verified") ?? "";
     const filterDate = searchParams.get("date") ?? "";
 
-    const orderBy: Prisma.LogbookHarianOrderByWithRelationInput =
-      sortBy === "verified"
-        ? { verified: sortOrder as Prisma.SortOrder }
-        : sortBy === "pendamping"
-          ? { id_pendamping: sortOrder as Prisma.SortOrder }
-          : sortBy === "id_tkm"
-            ? { id_tkm: sortOrder as Prisma.SortOrder }
-            : { updated_at: sortOrder as Prisma.SortOrder };
+    // Sort Mapping
+    // verified -> is_verified
+    // pendamping -> mentor_id
+    // id_tkm -> participant_id
+    // logbookDate -> activity_date
+    const sortFieldMap: Record<string, string> = {
+      verified: 'is_verified',
+      pendamping: 'mentor_id',
+      id_tkm: 'participant_id',
+      logbookDate: 'activity_date',
+      updated_at: 'updated_at'
+    };
+    const mappedSortBy = sortFieldMap[sortBy] || 'activity_date';
 
-    let pendampingIdsFromSearch: bigint[] = [];
-    let tkmIdsFromSearch: number[] = [];
+    const orderBy: Prisma.logbooksOrderByWithRelationInput = {};
+    (orderBy as any)[mappedSortBy] = sortOrder;
+
+    let pendampingIdsFromSearch: string[] = [];
+    let participantIdsFromSearch: string[] = [];
+
+    // Search Logic with UUIDs
+    // Since we can't easily search UUIDs by string like integers, we rely on searching names via relations
+    
+    // Build Where Input
+    const where: Prisma.logbooksWhereInput = {};
 
     if (search) {
-      const [pendampingUsers, pesertaMatches, universities] = await Promise.all([
-        prisma.user.findMany({
-          where: { name: { contains: search } },
-          select: { id: true },
-        }),
-        prisma.peserta.findMany({
-          where: { nama: { contains: search } },
-          select: { id_tkm: true },
-        }),
-        prisma.university.findMany({
-          where: { name: { contains: search } },
-          select: { id: true },
-        }),
-      ]);
-
-      pendampingIdsFromSearch = pendampingUsers.map((u) => u.id);
-      tkmIdsFromSearch = pesertaMatches
-        .map((p) => p.id_tkm)
-        .filter((id): id is number => Number.isFinite(id));
-
-      if (universities.length) {
-        const profiles = await prisma.profile.findMany({
-          where: { univ_id: { in: universities.map((u) => u.id) } },
-          select: { user_id: true },
-        });
-        pendampingIdsFromSearch.push(
-          ...profiles.map((p) => p.user_id).filter((id): id is bigint => typeof id === "bigint")
-        );
-      }
+        where.OR = [
+            // Search text fields
+            { activity_summary: { contains: search, mode: 'insensitive' } },
+            { mentoring_material: { contains: search, mode: 'insensitive' } },
+            { obstacles: { contains: search, mode: 'insensitive' } },
+            { solutions: { contains: search, mode: 'insensitive' } },
+            // Search relations
+            { participants: { 
+                profiles: {
+                    users: {
+                        username: { contains: search, mode: 'insensitive' }
+                    }
+                }
+            } },
+            { mentors: {
+                users: {
+                    username: { contains: search, mode: 'insensitive' }
+                }
+            } }
+        ];
     }
 
-    const dateRange =
-      filterDate && !Number.isNaN(Date.parse(filterDate))
-        ? {
-          gte: new Date(filterDate),
-          lt: new Date(new Date(filterDate).getTime() + 24 * 60 * 60 * 1000),
-        }
-        : undefined;
+    if (filterVerified) {
+        where.is_verified = filterVerified;
+    }
+    if (filterDate && !Number.isNaN(Date.parse(filterDate))) {
+        const startDate = new Date(filterDate);
+        const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+        where.activity_date = {
+            gte: startDate,
+            lt: endDate
+        };
+    }
 
-    const searchNumber = Number(search);
-    const hasSearchNumber = Number.isFinite(searchNumber);
-
-    const where = {
-      ...(search
-        ? {
-          OR: [
-            ...(hasSearchNumber ? [{ id_tkm: searchNumber }] : []),
-            { id_pendamping: { in: pendampingIdsFromSearch } },
-            { id_tkm: { in: tkmIdsFromSearch } },
-            { activitySummary: { contains: search } },
-            { mentoringMaterial: { contains: search } },
-            { obstacle: { contains: search } },
-            { solutions: { contains: search } },
-
-          ],
-        }
-        : undefined),
-
-      ...(filterVerified ? { verified: filterVerified } : undefined),
-      ...(dateRange ? { logbookDate: dateRange } : undefined),
-    } as const;
-
-    const logbooks = await prisma.logbookHarian.findMany({
+    const logbooks = await prisma.logbooks.findMany({
       take: pageSize,
       skip,
       orderBy,
       where,
-      select: {
-        id: true,
-        id_pendamping: true,
-        id_tkm: true,
-        activitySummary: true,
-        deliveryMethod: true,
-        visitType: true,
-        logbookDate: true,
-        meetingType: true,
-        mentoringMaterial: true,
-        obstacle: true,
-        solutions: true,
-        startTime: true,
-        endTime: true,
-        totalExpense: true,
-        verified: true,
-        month_report: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-    const pendampingIds = Array.from(new Set(logbooks.map((item) => item.id_pendamping)));
-
-    const tkmIds = Array.from(
-      new Set(logbooks.map((item) => item.id_tkm).filter((id) => Number.isFinite(id)))
-    );
-
-    const [pendampingProfiles, peserta] = await Promise.all([
-      pendampingIds.length
-        ? prisma.profile.findMany({
-          where: { user_id: { in: pendampingIds } },
-          select: {
-            user_id: true,
-            univ_id: true,
-            user: { select: { name: true } },
+      include: {
+          participants: {
+              include: {
+                  profiles: {
+                      include: {
+                          users: true
+                      }
+                  }
+              }
           },
-        })
-        : [],
-      tkmIds.length
-        ? prisma.peserta.findMany({
-          where: { id_tkm: { in: tkmIds } },
-          select: { id_tkm: true, nama: true },
-        })
-        : [],
-    ]);
-
-    const universityIds = Array.from(
-      new Set(
-        pendampingProfiles
-          .map((p) => p.univ_id)
-          .filter((id): id is number => Number.isFinite(id))
-      )
-    );
-
-    const universities = universityIds.length
-      ? await prisma.university.findMany({
-        where: { id: { in: universityIds } },
-        select: { id: true, name: true },
-      })
-      : [];
-
-    const pendampingMap = new Map(
-      pendampingProfiles.map((profile) => [
-        profile.user_id,
-        {
-          name: profile.user?.name ?? null,
-          univ_id: profile.univ_id ?? null,
-        },
-      ])
-    );
-
-    const pesertaMap = new Map(
-      peserta.map((item) => [item.id_tkm, item.nama ?? null])
-    );
-
-    const universityMap = new Map(universities.map((u) => [u.id, u.name]));
+          mentors: {
+              include: {
+                  users: {
+                      include: {
+                          profiles: true
+                      }
+                  }
+              }
+          }
+      }
+    });
+    
+    const total = await prisma.logbooks.count({ where });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     const data = logbooks.map((item) => {
-      const pendampingId = Number(item.id_pendamping);
-      const pendamping = pendampingMap.get(item.id_pendamping) ?? null;
-      const pendampingUniversity =
-        pendamping?.univ_id && universityMap.get(pendamping.univ_id)
-          ? universityMap.get(pendamping.univ_id)!
-          : null;
-
+      const participantUser = item.participants?.profiles?.users;
+      const mentorUser = item.mentors?.users;
+      const mentorProfile = (mentorUser as any)?.profiles;
+      
+      // Attempt to map back to legacy-ish structure if frontend relies on it
       return {
-        ...item,
-        id_pendamping: pendampingId,
-        pendampingName: pendamping?.name ?? null,
-        pendampingUniversity,
-        tkmName: pesertaMap.get(item.id_tkm) ?? null,
+        id: item.id,
+        id_pendamping: item.mentor_id, 
+        id_tkm: item.participants?.legacy_tkm_id, 
+        participant_id: item.participant_id, 
+        
+        activitySummary: item.activity_summary || "",
+        deliveryMethod: item.delivery_method || "",
+        visitType: item.visit_type || "",
+        logbookDate: item.activity_date,
+        meetingType: item.meeting_type || "",
+        mentoringMaterial: item.mentoring_material || "",
+        obstacle: item.obstacles || "",
+        solutions: item.solutions || "",
+        startTime: item.start_time,
+        endTime: item.end_time,
+        totalExpense: Number(item.expense_amount || 0),
+        verified: item.is_verified,
+        no_expense_reason: item.no_expense_reason || "",
+        
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        
+        // Extra info
+        pendampingName: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+        pendampingPhoto: mentorProfile?.avatar_url || null,
+        tkmName: item.participants?.profiles?.full_name || participantUser?.username || "Unknown",
+        tkmPhoto: item.participants?.profiles?.avatar_url || null,
+        pendampingUniversity: "",
       };
     });
-
-    const total = await prisma.logbookHarian.count({ where });
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     return NextResponse.json({
       data,

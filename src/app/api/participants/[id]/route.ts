@@ -7,37 +7,30 @@ export async function GET(
 ) {
     try {
         const { id: idParam } = await params;
-        const id = parseInt(idParam);
-
-        if (isNaN(id)) {
-            return NextResponse.json(
-                { error: "Invalid participant ID" },
-                { status: 400 }
-            );
-        }
+        // Legacy IDs were integers, but stored as strings in new DB 'legacy_tkm_id'
+        const id = String(idParam);
 
         // Fetch participant with all related data
-        const participant = await prisma.peserta.findUnique({
-            where: { id_tkm: id },
+        const participant = await prisma.participants.findFirst({
+            where: { legacy_tkm_id: id },
             include: {
-                pesertaDetails: {
-                    take: 1,
-                    orderBy: { created_at: "desc" },
-                },
-                user: {
+                businesses: true,
+                batches: true,
+                participant_groups: true,
+                profiles: {
                     include: {
-                        profiles: {
+                        users: true,
+                        addresses: {
                             include: {
-                                university: {
-                                    include: {
-                                        city: true,
-                                        province: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
+                                regencies: true,
+                                provinces: true,
+                                districts: true,
+                                villages: true
+                            }
+                        }
+                    }
                 },
+                emergency_contacts: true
             },
         });
 
@@ -48,133 +41,132 @@ export async function GET(
             );
         }
 
-        // Get the latest peserta detail
-        const pesertaDetail = participant.pesertaDetails[0] || null;
-        const profile = participant.user?.profiles[0] || null;
+        const profile = participant.profiles;
+        const user = profile?.users;
+        const business = participant.businesses[0] || null;
+        
+        // Address filtering
+        const addresses = profile?.addresses || [];
+        const ktpAddress = addresses.find(a => a.label?.toLowerCase().includes('ktp')) || addresses[0];
+        const domAddress = addresses.find(a => a.label?.toLowerCase().includes('domisili')) || addresses[1] || addresses[0];
 
         // Format response
         const response = {
             participant: {
                 // Basic Info
-                id_tkm: participant.id_tkm,
-                nama: participant.nama,
-                nik: participant.nik,
+                id_tkm: participant.legacy_tkm_id,
+                nama: profile?.full_name || user?.username || "Unknown",
+                nik: profile?.id_number,
                 status: participant.status,
-                no_whatsapp: participant.no_whatsapp,
+                no_whatsapp: profile?.whatsapp_number,
 
                 // Personal Data
-                tempat_lahir: participant.tempat_lahir,
-                tgl_lahir: participant.tgl_lahir,
-                umur: participant.umur,
-                pendidikan_terakhir: participant.pendidikan_terakhir,
-                jenis_kelamin: profile?.jenis_kelamin,
-                foto: profile?.foto || participant.link_pas_foto,
-                penyandang_disabilitas: participant.penyandang_disabilitas,
-                jenis_disabilitas: participant.jenis_disabilitas,
+                tempat_lahir: profile?.pob,
+                tgl_lahir: profile?.dob,
+                umur: null, // Need to calculate from dob?
+                pendidikan_terakhir: participant.last_education,
+                jenis_kelamin: profile?.gender,
+                foto: profile?.avatar_url,
+                penyandang_disabilitas: participant.disability_status,
+                jenis_disabilitas: participant.disability_type,
 
                 // Address Data - KTP
-                alamat_ktp: participant.alamat_ktp,
-                provinsi_ktp: participant.provinsi_ktp,
-                kota_ktp: participant.kota_ktp,
-                kecamatan_ktp: participant.kecamatan_ktp,
-                kelurahan_ktp: participant.kelurahan_ktp,
-                kode_pos_ktp: participant.kode_pos_ktp,
+                alamat_ktp: ktpAddress?.address_line,
+                provinsi_ktp: ktpAddress?.provinces?.name,
+                kota_ktp: ktpAddress?.regencies?.name,
+                kecamatan_ktp: ktpAddress?.districts?.name,
+                kelurahan_ktp: ktpAddress?.villages?.name,
+                kode_pos_ktp: ktpAddress?.postal_code,
 
                 // Address Data - Domisili
-                alamat_domisili_dan_alamat_ktp_sama:
-                    participant.alamat_domisili_dan_alamat_ktp_sama,
-                alamat_domisili: participant.alamat_domisili,
-                provinsi_domisili: participant.provinsi_domisili,
-                kota_domisili: participant.kota_domisili,
-                kecamatan_domisili: participant.kecamatan_domisili,
-                kelurahan_domisili: participant.kelurahan_domisili,
-                kode_pos_domisili: participant.kode_pos_domisili,
+                alamat_domisili_dan_alamat_ktp_sama: null, // Data not available directly
+                alamat_domisili: domAddress?.address_line,
+                provinsi_domisili: domAddress?.provinces?.name,
+                kota_domisili: domAddress?.regencies?.name,
+                kecamatan_domisili: domAddress?.districts?.name,
+                kelurahan_domisili: domAddress?.villages?.name,
+                kode_pos_domisili: domAddress?.postal_code,
 
                 // Business Data
-                nama_usaha: participant.nama_usaha,
-                sektor_usaha: participant.sektor_usaha,
-                jenis_usaha: participant.jenis_usaha,
-                deskripsi_usaha: participant.deskripsi_usaha,
-                produk_utama: participant.produk_utama,
-                aktivitas_saat_ini: participant.aktivitas_saat_ini,
-                omset_per_periode: participant.omset_per_periode,
-                laba_per_periode: participant.laba_per_periode,
-                jumlah_produk_per_periode: participant.jumlah_produk_per_periode,
-                satuan_jumlah_produk_per_periode:
-                    participant.satuan_jumlah_produk_per_periode,
-                saluran_pemasaran: participant.saluran_pemasaran,
-                wilayah_pemasaran: participant.wilayah_pemasaran,
-                mitra_usaha: participant.mitra_usaha,
-                jumlah_mitra_usaha: participant.jumlah_mitra_usaha,
+                nama_usaha: business?.name,
+                sektor_usaha: business?.sector,
+                jenis_usaha: business?.type,
+                deskripsi_usaha: business?.description,
+                produk_utama: business?.main_product,
+                aktivitas_saat_ini: participant.current_activity,
+                omset_per_periode: Number(business?.revenue_per_period),
+                laba_per_periode: Number(business?.profit_per_period),
+                jumlah_produk_per_periode: business?.production_volume,
+                satuan_jumlah_produk_per_periode: business?.production_unit,
+                saluran_pemasaran: business?.marketing_channels,
+                wilayah_pemasaran: business?.marketing_areas,
+                mitra_usaha: business?.partner_name,
+                jumlah_mitra_usaha: business?.partner_count,
 
                 // Business Location
-                lokasi_usaha: participant.lokasi_usaha,
-                kepemilikan_lokasi_usaha: participant.kepemilikan_lokasi_usaha,
-                alamat_usaha_dan_alamat_domisili_sama:
-                    participant.alamat_usaha_dan_alamat_domisili_sama,
-                alamat_usaha: participant.alamat_usaha,
-                provinsi_usaha: participant.provinsi_usaha,
-                kota_usaha: participant.kota_usaha,
-                kecamatan_usaha: participant.kecamatan_usaha,
-                kelurahan_usaha: participant.kelurahan_usaha,
-                kode_pos_usaha: participant.kode_pos_usaha,
+                lokasi_usaha: null, // addr?
+                kepemilikan_lokasi_usaha: business?.location_ownership,
+                alamat_usaha_dan_alamat_domisili_sama: null,
+                alamat_usaha: null, 
+                provinsi_usaha: null,
+                kota_usaha: null,
+                kecamatan_usaha: null,
+                kelurahan_usaha: null,
+                kode_pos_usaha: null,
 
                 // Legality
-                nomor_nib: participant.nomor_nib,
-                nomor_dokumen_nib: participant.nomor_dokumen_nib,
-                nama_usaha_dokumen_nib: participant.nama_usaha_dokumen_nib,
-                nomor_dokumen_legalitas: participant.nomor_dokumen_legalitas,
-                nama_dokumen_legalitas: participant.nama_dokumen_legalitas,
-                nomor_dokumen_sku: participant.nomor_dokumen_sku,
-                tanggal_dokumen_sku: participant.tanggal_dokumen_sku,
+                nomor_nib: business?.nib_number,
+                nomor_dokumen_nib: null,
+                nama_usaha_dokumen_nib: null,
+                nomor_dokumen_legalitas: null,
+                nama_dokumen_legalitas: null,
+                nomor_dokumen_sku: null,
+                tanggal_dokumen_sku: null,
 
                 // Status & Batch
-                batch_pembekalan: participant.batch_pembekalan,
-                tanggal_daftar: participant.tanggal_daftar,
-                tanggal_submit_pendaftaran: participant.tanggal_submit_pendaftaran,
-                pleno: participant.pleno,
-                ptn_pts: participant.ptn_pts,
+                batch_pembekalan: participant.batches?.code,
+                kelompok: participant.participant_groups?.name,
+                tanggal_daftar: participant.created_at,
+                tanggal_submit_pendaftaran: null,
+                pleno: null,
+                ptn_pts: null,
 
                 // Contact
-                jenis_medsos: participant.jenis_medsos,
-                nama_medsos: participant.nama_medsos,
-                link_media_sosial: participant.link_media_sosial,
-                nama_kerabat_1: participant.nama_kerabat_1,
-                no_kerabat_1: participant.no_kerabat_1,
-                status_kerabat_1: participant.status_kerabat_1,
-                nama_kerabat_2: participant.nama_kerabat_2,
-                no_kerabat_2: participant.no_kerabat_2,
-                status_kerabat_2: participant.status_kerabat_2,
+                jenis_medsos: null,
+                nama_medsos: null,
+                link_media_sosial: null,
+                nama_kerabat_1: participant.emergency_contacts?.[0]?.full_name,
+                no_kerabat_1: participant.emergency_contacts?.[0]?.phone_number,
+                status_kerabat_1: participant.emergency_contacts?.[0]?.relationship,
+                nama_kerabat_2: participant.emergency_contacts?.[1]?.full_name,
+                no_kerabat_2: participant.emergency_contacts?.[1]?.phone_number,
+                status_kerabat_2: participant.emergency_contacts?.[1]?.relationship,
 
-                // Peserta Detail
-                pesertaDetail: pesertaDetail
-                    ? {
-                        communicationStatus: pesertaDetail.communicationStatus,
-                        fundDisbursement: pesertaDetail.fundDisbursement,
-                        presenceStatus: pesertaDetail.presenceStatus,
-                        willingToBeAssisted: pesertaDetail.willingToBeAssisted,
-                        reasonNotWilling: pesertaDetail.reasonNotWilling,
-                        statusApplicant: pesertaDetail.statusApplicant,
-                        reasonDrop: pesertaDetail.reasonDrop,
-                        no_wa: pesertaDetail.no_wa,
-                        link_map: pesertaDetail.link_map,
-                        bmcFile: pesertaDetail.bmcFile,
-                        actionPlanFile: pesertaDetail.actionPlanFile,
-                    }
-                    : null,
+                // Peserta Detail - Merged into Participant
+                pesertaDetail: {
+                    communicationStatus: participant.communication_status,
+                    fundDisbursement: participant.fund_disbursement,
+                    presenceStatus: participant.presence_status,
+                    willingToBeAssisted: participant.willing_to_be_assisted,
+                    reasonNotWilling: participant.reason_not_willing,
+                    statusApplicant: participant.status_applicant,
+                    reasonDrop: participant.reason_drop,
+                    no_wa: profile?.whatsapp_number,
+                    link_map: null,
+                    bmcFile: null,
+                    actionPlanFile: null,
+                },
 
-                // University (from profile)
-                university: profile?.university
-                    ? {
-                        name: profile.university.name,
-                        city: profile.university.city?.city_name,
-                        province: profile.university.province?.prov_name,
-                    }
-                    : null,
+                // University - Removed in new schema?
+                university: null
             },
         };
 
-        return NextResponse.json(response);
+        // Helper to serialize BigInt if needed (though we used Number() mostly)
+        return NextResponse.json(JSON.parse(JSON.stringify(response, (key, value) => 
+            typeof value === 'bigint' ? value.toString() : value
+        )));
+
     } catch (error) {
         console.error("Error fetching participant detail:", error);
         return NextResponse.json(

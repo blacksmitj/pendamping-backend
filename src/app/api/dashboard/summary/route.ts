@@ -15,155 +15,245 @@ function serializeBigInt(data: any): any {
 export async function GET() {
   try {
     // 1. Basic Counts
-    const participantsCount = await prisma.peserta.count({
+    const participantsCount = await prisma.participants.count({
       where: {
-        NOT: { status: "Cadangan" },
+        status: "active",
+        profiles: {
+            universities: {
+                status: "active"
+            }
+        }
       },
     });
 
-    const mentorsCount = await prisma.user.count({
+    const mentorsCount = await prisma.users.count({
       where: {
-        model_has_roles: {
-          some: {
-            role: {
-              name: "user",
-            },
-          },
+        roles: {
+            name: { in: ['mentor', 'user'] }
         },
+        profiles: {
+            universities: {
+                status: "active"
+            }
+        }
       },
     });
 
-    const universitiesCount = await prisma.university.count();
+    const universitiesCount = (prisma as any).universities ? await (prisma as any).universities.count({
+        where: { status: 'active' }
+    }) : 0;
 
-    const newEmployeesCountRaw: any[] = await prisma.$queryRaw`
-      SELECT COUNT(DISTINCT id) as count FROM tkm_new_employee
-    `;
-    const newEmployeesCount = Number(newEmployeesCountRaw[0]?.count || 0);
+    const newEmployeesCount = await prisma.business_employees.count({
+        where: {
+            businesses: {
+                participants: {
+                    profiles: {
+                        universities: {
+                            status: 'active'
+                        }
+                    }
+                }
+            }
+        }
+    });
 
     // 2. Map Data (Distribution by Province)
-    const mapDistribution = await prisma.$queryRaw`
-      SELECT provinsi_domisili as name, COUNT(*) as value
-      FROM peserta
-      WHERE provinsi_domisili IS NOT NULL AND status != 'Cadangan'
-      GROUP BY provinsi_domisili
+    // Participants -> Profiles -> Addresses -> Provinces
+    // We want active participants distribution
+    const regencyDistributionRaw: any[] = await prisma.$queryRaw`
+      SELECT 
+        addr.regency_name as name, 
+        COUNT(DISTINCT b.id) as value,
+        AVG(CAST(addr.latitude AS DOUBLE PRECISION)) as lat,
+        AVG(CAST(addr.longitude AS DOUBLE PRECISION)) as lng
+      FROM addresses addr
+      JOIN profiles prof ON addr.profile_id = prof.id
+      JOIN universities u ON prof.university_id = u.id
+      JOIN participants p ON prof.id = p.profile_id
+      LEFT JOIN businesses b ON p.id = b.participant_id
+      WHERE p.status = 'active'
+        AND addr.regency_name IS NOT NULL
+        AND u.status = 'active'
+      GROUP BY addr.regency_name
       ORDER BY value DESC
     `;
 
-    // 3. Top 10 TKML Omzet Rate (Revenue Growth Month 0-3 equivalent)
-    // Calculating growth as (Last Revenue - First Revenue) / First Revenue * 100
+    // 3. Top 10 TKML Omzet Rate (Revenue Growth)
+    // Logic: (Last Revenue - First Revenue) / First Revenue * 100
+    // We need to fetch participants with their first and last monthly report revenue.
+    // Complex to do efficiently in one query without Window Functions.
+    // Use raw SQL with window functions.
     const topOmzetParticipants = await prisma.$queryRaw`
+      WITH RankedReports AS (
+        SELECT 
+          mr.participant_id,
+          mr.revenue,
+          mr.report_year,
+          mr.report_month,
+          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
+          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
+        FROM monthly_reports mr
+        WHERE mr.revenue IS NOT NULL
+      ),
+      ParticipantGrowth AS (
+        SELECT 
+          r1.participant_id,
+          r1.revenue as first_revenue,
+          r2.revenue as last_revenue,
+          CASE 
+            WHEN r1.revenue = 0 THEN 0 
+            ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
+          END as growth
+        FROM RankedReports r1
+        JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
+        WHERE r1.rn_asc = 1 AND r2.rn_desc = 1
+      )
       SELECT 
-        p.nama, 
-        p.nama_usaha,
-        p.link_pas_foto as photo,
-        CAST((
-          COALESCE(
-            (
-              (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report DESC LIMIT 1) - 
-              (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1)
-            ) / NULLIF((SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1), 0) * 100
-          , 0)
-        ) AS DECIMAL(10, 2)) as growth,
-         CAST((SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report DESC LIMIT 1) AS SIGNED) as last_revenue
-      FROM peserta p
-      WHERE p.status != 'Cadangan'
-      ORDER BY growth DESC
+        COALESCE(prof.full_name, u.username, 'Unknown') as nama, 
+        COALESCE(b.name, 'Unknown Business') as nama_usaha, 
+        prof.avatar_url as photo,
+        pg.growth,
+        pg.last_revenue
+      FROM ParticipantGrowth pg
+      JOIN participants p ON pg.participant_id = p.id
+      LEFT JOIN businesses b ON p.id = b.participant_id
+      LEFT JOIN profiles prof ON p.profile_id = prof.id
+      JOIN universities univ ON prof.university_id = univ.id
+      LEFT JOIN users u ON prof.user_id = u.id
+      WHERE p.status = 'active' AND univ.status = 'active'
+      ORDER BY pg.growth DESC
       LIMIT 10
     `;
 
-    // 4. University Stats (Aggregated)
-    // Linking: University -> Profile -> User (Mentor) -> UserPeserta -> Peserta -> CapaianOutput
-    // Note: Complex join needed.
-    // We want: Univ Name, Total Mentors, Total Participants, Total New Employees, Avg Growth
-    // 4. University Stats (Aggregated)
-    // Simplified logic: Univ -> Profile -> UserPeserta -> Peserta
-    // Removing strict role check as some active mentors might not have 'user' role explicitly but are in user_peserta.
-    const universityStats = await prisma.$queryRaw`
-       SELECT 
-        u.name as university_name,
-        COUNT(DISTINCT prof.user_id) as total_mentors,
-        COUNT(DISTINCT CASE WHEN p.status != 'Cadangan' THEN up.id_tkm END) as total_participants,
-        COALESCE(SUM(
-          CASE WHEN p.status != 'Cadangan' THEN 
-            (SELECT COUNT(DISTINCT ne.id) FROM tkm_new_employee ne JOIN capaian_output co2 ON ne.capaian_output_id = co2.id WHERE co2.id_tkm = p.id_tkm)
-          ELSE 0 END
-        ), 0) as total_new_employees,
-        CAST(AVG(
-           CASE WHEN p.status != 'Cadangan' THEN
-             COALESCE(
-              (
-                (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report DESC LIMIT 1) - 
-                (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1)
-              ) / NULLIF((SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1), 0) * 100
-            , 0)
-           ELSE NULL END
-        ) AS DECIMAL(10, 2)) as avg_growth
-      FROM universities u
-      JOIN profiles prof ON prof.univ_id = u.id
-      LEFT JOIN user_peserta up ON up.admin_id = prof.user_id
-      LEFT JOIN peserta p ON up.id_tkm = p.id_tkm
-      GROUP BY u.id, u.name
-      HAVING total_mentors > 0
-      ORDER BY avg_growth DESC
-    `;
+    // 4. University Stats
+    let universityStats: any[] = [];
+    if ((prisma as any).universities) {
+        const universityStatsRaw: any[] = await prisma.$queryRaw`
+          WITH RankedReports AS (
+            SELECT 
+              mr.participant_id,
+              mr.revenue,
+              ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
+              ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
+            FROM monthly_reports mr
+            WHERE mr.revenue IS NOT NULL
+          ),
+          ParticipantGrowth AS (
+            SELECT 
+              r1.participant_id,
+              CASE 
+                WHEN r1.revenue = 0 THEN 0 
+                ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
+              END as growth
+            FROM RankedReports r1
+            JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
+            WHERE r1.rn_asc = 1 AND r2.rn_desc = 1
+          ),
+          ParticipantStats AS (
+            SELECT 
+              p.id as participant_id,
+              COALESCE(pg.growth, 0) as growth,
+              (SELECT COUNT(*) FROM business_employees be JOIN businesses b ON be.business_id = b.id WHERE b.participant_id = p.id) as emp_count
+            FROM participants p
+            LEFT JOIN ParticipantGrowth pg ON p.id = pg.participant_id
+            WHERE p.status = 'active'
+          ),
+          UnivStats AS (
+            SELECT 
+              u.name as university_name,
+              m.id as mentor_id,
+              mp.participant_id,
+              u.status as univ_status
+            FROM universities u
+            JOIN profiles prof ON u.id = prof.university_id
+            JOIN mentors m ON prof.user_id = m.user_id
+            LEFT JOIN mentor_participants mp ON m.id = mp.mentor_id
+            WHERE u.status = 'active'
+          )
+          SELECT 
+            us.university_name,
+            CAST(COUNT(DISTINCT us.mentor_id) AS INTEGER) as total_mentors,
+            CAST(COUNT(DISTINCT ps.participant_id) AS INTEGER) as total_participants,
+            COALESCE(CAST(SUM(ps.emp_count) AS INTEGER), 0) as total_new_employees,
+            COALESCE(AVG(ps.growth), 0) as avg_growth
+          FROM UnivStats us
+          LEFT JOIN ParticipantStats ps ON us.participant_id = ps.participant_id
+          GROUP BY us.university_name
+          ORDER BY total_participants DESC
+        `;
 
-    // 5. Top Mentors by Visits (Perorangan + Luring)
-    // admin_id in logbook_harian is assumed to be the mentor's user_id. 
-    // Schema check: logbook_harian has id_pendamping (BigInt), which usually maps to User.id
-    // 5. Top Mentors by Visits (Perorangan + Luring)
-    // Data check shows visitType is 'lokal' or 'luar_kota', and meetingType is 'perorangan'.
-    // Adjusting filter to match these values.
+        universityStats = universityStatsRaw.map(u => ({
+          university_name: u.university_name,
+          total_mentors: Number(u.total_mentors),
+          total_participants: Number(u.total_participants),
+          total_new_employees: Number(u.total_new_employees),
+          avg_growth: Number(u.avg_growth)
+        }));
+    } else {
+        console.warn("[dashboard-summary] Skipping universityStats because model is not available in Prisma client");
+    }
+
+    // 5. Top Mentors by Visits
     const topMentorsVisits = await prisma.$queryRaw`
       SELECT 
-        u.name,
-        p.foto,
-        COUNT(lh.id) as visit_count
-      FROM logbook_harian lh
-      JOIN users u ON u.id = lh.id_pendamping
-      LEFT JOIN profiles p ON p.user_id = u.id
+        COALESCE(u.username, 'Unknown') as name,
+        prof.avatar_url as foto,
+        COUNT(l.id) as visit_count
+      FROM logbooks l
+      JOIN mentors m ON l.mentor_id = m.id
+      JOIN users u ON m.user_id = u.id
+      LEFT JOIN profiles prof ON u.id = prof.user_id
+      JOIN universities univ ON prof.university_id = univ.id
       WHERE 
-        lh.meetingType = 'perorangan' 
-        AND lh.visitType IN ('lokal', 'luar_kota', 'Luring')
-      GROUP BY lh.id_pendamping, u.name, p.foto
+        l.meeting_type = 'perorangan' 
+        AND l.visit_type IN ('lokal', 'luar_kota', 'Luring')
+        AND univ.status = 'active'
+      GROUP BY m.id, u.username, prof.avatar_url
       ORDER BY visit_count DESC
       LIMIT 10
     `;
 
     // 6. Summary Omzet Rate (Global Average)
+    // Reuse the CTE logic from #3 but avg
     const summaryOmzetRaw: any[] = await prisma.$queryRaw`
-      SELECT 
-        CAST(AVG(
-           COALESCE(
-            (
-              (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report DESC LIMIT 1) - 
-              (SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1)
-            ) / NULLIF((SELECT revenue FROM capaian_output WHERE id_tkm = p.id_tkm ORDER BY month_report ASC LIMIT 1), 0) * 100
-          , 0)
-        ) AS DECIMAL(10, 2)) as avg_growth
-      FROM peserta p
-      WHERE p.status != 'Cadangan'
+      WITH RankedReports AS (
+        SELECT 
+          mr.participant_id,
+          mr.revenue,
+          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
+          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
+        FROM monthly_reports mr
+        WHERE mr.revenue IS NOT NULL
+      ),
+      ParticipantGrowth AS (
+        SELECT 
+          CASE 
+            WHEN r1.revenue = 0 THEN 0 
+            ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
+          END as growth
+        FROM RankedReports r1
+        JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
+        JOIN participants p ON r1.participant_id = p.id
+        JOIN profiles prof ON p.profile_id = prof.id
+        JOIN universities u ON prof.university_id = u.id
+        WHERE r1.rn_asc = 1 AND r2.rn_desc = 1 AND u.status = 'active'
+      )
+      SELECT AVG(growth) as avg_growth FROM ParticipantGrowth
     `;
     const summaryOmzetGrowth = Number(summaryOmzetRaw[0]?.avg_growth || 0);
 
-
-    // Explicitly convert types for serialization compatibility
-    const safeMapDistribution: any[] = (mapDistribution as any[]).map((m: any) => ({
-      ...m,
-      value: Number(m.value)
+    // Serialization & Safety
+    const safeMapDistribution = regencyDistributionRaw.map((m: any) => ({
+        name: m.name,
+        value: Number(m.value),
+        lat: m.lat ? Number(m.lat) : null,
+        lng: m.lng ? Number(m.lng) : null
     }));
 
     const safeTopOmzetParticipants: any[] = (topOmzetParticipants as any[]).map((p: any) => ({
       ...p,
       growth: Number(p.growth),
       last_revenue: Number(p.last_revenue)
-    }));
-
-    const safeUniversityStats: any[] = (universityStats as any[]).map((u: any) => ({
-      ...u,
-      total_mentors: Number(u.total_mentors),
-      total_participants: Number(u.total_participants),
-      total_new_employees: Number(u.total_new_employees),
-      avg_growth: Number(u.avg_growth)
     }));
 
     const safeTopMentorsVisits: any[] = (topMentorsVisits as any[]).map((m: any) => ({
@@ -181,7 +271,7 @@ export async function GET() {
       },
       mapDistribution: safeMapDistribution,
       topOmzetParticipants: safeTopOmzetParticipants,
-      universityStats: safeUniversityStats,
+      universityStats: universityStats,
       topMentorsVisits: safeTopMentorsVisits,
       updatedAt: new Date().toISOString(),
     }));

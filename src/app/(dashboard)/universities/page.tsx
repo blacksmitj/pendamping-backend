@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, RefreshCw } from "lucide-react";
+import { Building2, RefreshCw, Power, PowerOff } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -192,6 +193,8 @@ export default function UniversitiesPage() {
                 <TableHead>City</TableHead>
                 <TableHead>Province</TableHead>
                 <TableHead>Address</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,6 +225,63 @@ export default function UniversitiesPage() {
                     </TableCell>
                     <TableCell className="max-w-[220px] truncate text-sm text-muted-foreground">
                       {university.alamat ?? "No address"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          university.status === "active"
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20"
+                            : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
+                        }`}
+                      >
+                        {university.status === "active" ? "Active" : "Inactive"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const newStatus =
+                            university.status === "active" ? "deactive" : "active";
+                          try {
+                            const res = await fetch(
+                              `/api/universities/${university.id}`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: newStatus }),
+                              }
+                            );
+                            if (!res.ok) throw new Error("Failed to update");
+                            toast.success(
+                              `University ${
+                                newStatus === "active" ? "activated" : "deactivated"
+                              } successfully`
+                            );
+                            refetchUniversities();
+                          } catch (error) {
+                            toast.error("Failed to update university status");
+                          }
+                        }}
+                        className={
+                          university.status === "active"
+                            ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                        }
+                      >
+                        {university.status === "active" ? (
+                          <>
+                            <PowerOff className="mr-2 h-4 w-4" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <Power className="mr-2 h-4 w-4" />
+                            Activate
+                          </>
+                        )}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

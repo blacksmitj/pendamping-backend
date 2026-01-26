@@ -7,54 +7,26 @@ export async function GET(
 ) {
     try {
         const { id: idParam } = await params;
-        const id = parseInt(idParam);
+        const id = String(idParam); // legacy_tkm_id
 
-        if (isNaN(id)) {
-            return NextResponse.json(
-                { error: "Invalid participant ID" },
-                { status: 400 }
-            );
-        }
-
-        // Fetch participant document fields
-        const participant = await prisma.peserta.findUnique({
-            where: { id_tkm: id },
-            select: {
-                // Personal Documents
-                link_ktp: true,
-                upload_kartu_keluarga: true,
-                link_pas_foto: true,
-
-                // Business Documents
-                dokumen_profil_usaha: true,
-                dokumen_bmc_strategi_model_usaha: true,
-                dokumen_rab: true,
-                dokumen_rencana_pengembangan_usaha: true,
-                link_video: true,
-                foto_usaha: true,
-                dokumen_pencatatan_keuangan: true,
-
-                // Legality Documents
-                dokumen_nib: true,
-                nomor_dokumen_nib: true,
-                nama_usaha_dokumen_nib: true,
-                dokumen_legalitas: true,
-                nomor_dokumen_legalitas: true,
-                nama_dokumen_legalitas: true,
-                dokumen_sku: true,
-                nomor_dokumen_sku: true,
-                tanggal_dokumen_sku: true,
-                kelurahan_dokumen_sku: true,
-                pejabat_penandatangan_dokumen_sku: true,
-
-                // Financial Documents
-                lpj_tkm_pemula_2024: true,
-                bast_tkm_pemula_2024: true,
-                dokumentasi_usaha_tkm_pemula_2024: true,
-
-                // Application Documents
-                dokumen_surat_permohonan_bantuan: true,
-                dokumen_surat_pernyataan_kesanggupan: true,
+        // Fetch participant and related documents
+        const participant = await prisma.participants.findFirst({
+            where: { legacy_tkm_id: id },
+            include: {
+                participant_documents: {
+                    include: {
+                        documents: true
+                    }
+                },
+                businesses: {
+                    include: {
+                        business_documents: {
+                            include: {
+                                documents: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -64,6 +36,83 @@ export async function GET(
                 { status: 404 }
             );
         }
+
+        // Helper to find doc url by label
+        const findDoc = (docs: any[], labelPattern: RegExp | string) => {
+            const doc = docs.find(d => {
+                const l = d.label?.toLowerCase() || "";
+                if (labelPattern instanceof RegExp) return labelPattern.test(l);
+                return l === String(labelPattern).toLowerCase();
+            });
+            return doc ? doc.file_url : null;
+        };
+        
+        // Helper to find multiple docs
+        const findDocs = (docs: any[], labelPattern: RegExp | string) => {
+             return docs.filter(d => {
+                const l = d.label?.toLowerCase() || "";
+                if (labelPattern instanceof RegExp) return labelPattern.test(l);
+                return l === String(labelPattern).toLowerCase();
+            }).map(d => d.file_url);
+        };
+
+        // Collect all documents
+        const pDocs = participant.participant_documents.map((pd: any) => pd.documents);
+        const bDocs = participant.businesses.flatMap((b: any) => b.business_documents.map((bd: any) => bd.documents));
+        const allDocs = [...pDocs, ...bDocs];
+
+        // Mapping
+        // Adjust labels based on expected values in new schema (assumed from legacy field names or standard names)
+        const mappedDocs = {
+            // Personal
+            link_ktp: findDoc(allDocs, /ktp/i),
+            upload_kartu_keluarga: findDoc(allDocs, /k.*k/i), // KK / Kartu Keluarga
+            link_pas_foto: findDoc(allDocs, /foto.*diri|pas.*foto/i),
+
+            // Business
+            dokumen_profil_usaha: findDoc(allDocs, /profil.*usaha/i),
+            dokumen_bmc_strategi_model_usaha: findDoc(allDocs, /bmc|model.*usaha/i),
+            dokumen_rab: findDoc(allDocs, /rab/i),
+            dokumen_rencana_pengembangan_usaha: findDoc(allDocs, /rencana.*pengembangan/i),
+            link_video: findDoc(allDocs, /video/i),
+            foto_usaha: findDocs(allDocs, /foto.*usaha/i).join(','), // Join for legacy string format
+            dokumen_pencatatan_keuangan: findDoc(allDocs, /catatan.*keuangan/i),
+
+            // Legality
+            dokumen_nib: findDoc(allDocs, /nib/i),
+            dokumen_legalitas: findDoc(allDocs, /legalitas|akta/i),
+            dokumen_sku: findDoc(allDocs, /sku|keterangan.*usaha/i),
+
+            // Financial (might be in monthly reports or here?)
+            // Assuming if they were on peserta table, they are now docs linked to participant
+            lpj_tkm_pemula_2024: findDoc(allDocs, /lpj/i),
+            bast_tkm_pemula_2024: findDoc(allDocs, /bast/i),
+            dokumentasi_usaha_tkm_pemula_2024: findDoc(allDocs, /dokumentasi.*usaha/i), // Separate from foto usaha?
+
+            // Application
+            dokumen_surat_permohonan_bantuan: findDoc(allDocs, /permohonan/i),
+            dokumen_surat_pernyataan_kesanggupan: findDoc(allDocs, /pernyataan|kesanggupan/i),
+        };
+        
+        // Manual metadata fields (numbers, names) - new schema stores these in specific columns or metadata json?
+        // Checking schema: businesses has `nib_number`. 
+        // Participant doesn't have explicit columns for these numbers in new schema except what we saw.
+        // We'll try to find them in businesses table or return null/metadata.
+        const biz = participant.businesses[0]; // Assume primary business
+
+        const participantData = {
+            ...mappedDocs,
+            nomor_dokumen_nib: biz?.nib_number || null,
+            nama_usaha_dokumen_nib: biz?.name || null, // Assuming business name matches NIB
+            
+            // Others might be missing or in metadata
+            nomor_dokumen_legalitas: null,
+            nama_dokumen_legalitas: null,
+            nomor_dokumen_sku: null,
+            tanggal_dokumen_sku: null,
+            kelurahan_dokumen_sku: null,
+            pejabat_penandatangan_dokumen_sku: null,
+        };
 
         // Helper function to check if document is uploaded
         const isUploaded = (url: string | null): boolean => {
@@ -80,93 +129,93 @@ export async function GET(
         const documents = {
             personal: {
                 ktp: {
-                    url: participant.link_ktp,
-                    uploaded: isUploaded(participant.link_ktp),
+                    url: participantData.link_ktp,
+                    uploaded: isUploaded(participantData.link_ktp),
                 },
                 kk: {
-                    url: participant.upload_kartu_keluarga,
-                    uploaded: isUploaded(participant.upload_kartu_keluarga),
+                    url: participantData.upload_kartu_keluarga,
+                    uploaded: isUploaded(participantData.upload_kartu_keluarga),
                 },
                 pasFoto: {
-                    url: participant.link_pas_foto,
-                    uploaded: isUploaded(participant.link_pas_foto),
+                    url: participantData.link_pas_foto,
+                    uploaded: isUploaded(participantData.link_pas_foto),
                 },
             },
             business: {
                 profilUsaha: {
-                    url: participant.dokumen_profil_usaha,
-                    uploaded: isUploaded(participant.dokumen_profil_usaha),
+                    url: participantData.dokumen_profil_usaha,
+                    uploaded: isUploaded(participantData.dokumen_profil_usaha),
                 },
                 bmc: {
-                    url: participant.dokumen_bmc_strategi_model_usaha,
-                    uploaded: isUploaded(participant.dokumen_bmc_strategi_model_usaha),
+                    url: participantData.dokumen_bmc_strategi_model_usaha,
+                    uploaded: isUploaded(participantData.dokumen_bmc_strategi_model_usaha),
                 },
                 rab: {
-                    url: participant.dokumen_rab,
-                    uploaded: isUploaded(participant.dokumen_rab),
+                    url: participantData.dokumen_rab,
+                    uploaded: isUploaded(participantData.dokumen_rab),
                 },
                 rencanaPengembangan: {
-                    url: participant.dokumen_rencana_pengembangan_usaha,
-                    uploaded: isUploaded(participant.dokumen_rencana_pengembangan_usaha),
+                    url: participantData.dokumen_rencana_pengembangan_usaha,
+                    uploaded: isUploaded(participantData.dokumen_rencana_pengembangan_usaha),
                 },
                 videoUsaha: {
-                    url: participant.link_video,
-                    uploaded: isUploaded(participant.link_video),
+                    url: participantData.link_video,
+                    uploaded: isUploaded(participantData.link_video),
                 },
                 fotoUsaha: {
-                    urls: parseFiles(participant.foto_usaha),
-                    uploaded: parseFiles(participant.foto_usaha).length > 0,
+                    urls: parseFiles(participantData.foto_usaha),
+                    uploaded: parseFiles(participantData.foto_usaha).length > 0,
                 },
                 pencatatanKeuangan: {
-                    url: participant.dokumen_pencatatan_keuangan,
-                    uploaded: isUploaded(participant.dokumen_pencatatan_keuangan),
+                    url: participantData.dokumen_pencatatan_keuangan,
+                    uploaded: isUploaded(participantData.dokumen_pencatatan_keuangan),
                 },
             },
             legality: {
                 nib: {
-                    url: participant.dokumen_nib,
-                    number: participant.nomor_dokumen_nib,
-                    businessName: participant.nama_usaha_dokumen_nib,
-                    uploaded: isUploaded(participant.dokumen_nib),
+                    url: participantData.dokumen_nib,
+                    number: participantData.nomor_dokumen_nib,
+                    businessName: participantData.nama_usaha_dokumen_nib,
+                    uploaded: isUploaded(participantData.dokumen_nib),
                 },
                 legalitas: {
-                    url: participant.dokumen_legalitas,
-                    number: participant.nomor_dokumen_legalitas,
-                    name: participant.nama_dokumen_legalitas,
-                    uploaded: isUploaded(participant.dokumen_legalitas),
+                    url: participantData.dokumen_legalitas,
+                    number: participantData.nomor_dokumen_legalitas,
+                    name: participantData.nama_dokumen_legalitas,
+                    uploaded: isUploaded(participantData.dokumen_legalitas),
                 },
                 sku: {
-                    url: participant.dokumen_sku,
-                    number: participant.nomor_dokumen_sku,
-                    date: participant.tanggal_dokumen_sku,
-                    location: participant.kelurahan_dokumen_sku,
-                    signatory: participant.pejabat_penandatangan_dokumen_sku,
-                    uploaded: isUploaded(participant.dokumen_sku),
+                    url: participantData.dokumen_sku,
+                    number: participantData.nomor_dokumen_sku,
+                    date: participantData.tanggal_dokumen_sku,
+                    location: participantData.kelurahan_dokumen_sku,
+                    signatory: participantData.pejabat_penandatangan_dokumen_sku,
+                    uploaded: isUploaded(participantData.dokumen_sku),
                 },
             },
             financial: {
                 lpj2024: {
-                    url: participant.lpj_tkm_pemula_2024,
-                    uploaded: isUploaded(participant.lpj_tkm_pemula_2024),
+                    url: participantData.lpj_tkm_pemula_2024,
+                    uploaded: isUploaded(participantData.lpj_tkm_pemula_2024),
                 },
                 bast2024: {
-                    url: participant.bast_tkm_pemula_2024,
-                    uploaded: isUploaded(participant.bast_tkm_pemula_2024),
+                    url: participantData.bast_tkm_pemula_2024,
+                    uploaded: isUploaded(participantData.bast_tkm_pemula_2024),
                 },
                 dokumentasiUsaha: {
-                    url: participant.dokumentasi_usaha_tkm_pemula_2024,
-                    uploaded: isUploaded(participant.dokumentasi_usaha_tkm_pemula_2024),
+                    url: participantData.dokumentasi_usaha_tkm_pemula_2024,
+                    uploaded: isUploaded(participantData.dokumentasi_usaha_tkm_pemula_2024),
                 },
             },
             application: {
                 suratPermohonan: {
-                    url: participant.dokumen_surat_permohonan_bantuan,
-                    uploaded: isUploaded(participant.dokumen_surat_permohonan_bantuan),
+                    url: participantData.dokumen_surat_permohonan_bantuan,
+                    uploaded: isUploaded(participantData.dokumen_surat_permohonan_bantuan),
                 },
                 suratPernyataan: {
-                    url: participant.dokumen_surat_pernyataan_kesanggupan,
+                    url: participantData.dokumen_surat_pernyataan_kesanggupan,
                     uploaded: isUploaded(
-                        participant.dokumen_surat_pernyataan_kesanggupan
+                        participantData.dokumen_surat_pernyataan_kesanggupan
                     ),
                 },
             },

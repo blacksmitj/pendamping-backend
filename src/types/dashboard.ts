@@ -1,6 +1,7 @@
 export type Participant = {
+  id: string;
   no: number;
-  id_tkm: number | null;
+  id_tkm: string | number | null;
   nama: string | null;
   nama_usaha: string | null;
   status: string | null;
@@ -22,7 +23,7 @@ export type Mentor = {
   gender: string;
   photo: string | null;
   university: {
-    id: number;
+    id: string;
     name: string;
     city: string;
     province: string;
@@ -30,11 +31,12 @@ export type Mentor = {
 };
 
 export type University = {
-  id: number;
+  id: string; // Changed from number to string to match UUID in DB
   name: string;
   alamat: string | null;
   city: string;
   province: string;
+  status: string;
   photo: string | null;
 };
 
@@ -106,10 +108,12 @@ export type DashboardSummary = {
 
 export type LogbookEntry = {
   id: string;
-  id_pendamping: number;
-  id_tkm: number;
+  id_pendamping: string | null;
+  id_tkm: string | number | null;
   tkmName: string | null;
+  tkmPhoto: string | null;
   pendampingName: string | null;
+  pendampingPhoto: string | null;
   pendampingUniversity: string | null;
   activitySummary: string | null;
   deliveryMethod: string | null;
@@ -121,7 +125,7 @@ export type LogbookEntry = {
   solutions: string | null;
   startTime: string | null;
   endTime: string | null;
-  totalExpense: string | null;
+  totalExpense: number | string | null;
   verified: string | null;
   month_report: number | null;
   created_at: string | null;
@@ -130,10 +134,12 @@ export type LogbookEntry = {
 
 export type CapaianOutput = {
   id: string;
-  id_pendamping: number | null;
-  id_tkm: number;
+  id_pendamping: string | null;
+  id_tkm: string | number | null;
   tkmName: string | null;
+  tkmPhoto: string | null;
   pendampingName: string | null;
+  pendampingPhoto: string | null;
   pendampingUniversity: string | null;
   month_report: number;
   bookkeeping_cashflow: string | null;

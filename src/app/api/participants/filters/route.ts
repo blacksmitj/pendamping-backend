@@ -5,31 +5,50 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
-        const [statuses, provinces, cities] = await Promise.all([
-            prisma.peserta.findMany({
-                select: { status: true },
-                distinct: ["status"],
-                where: { status: { not: null } },
-                orderBy: { status: "asc" },
-            }),
-            prisma.peserta.findMany({
-                select: { provinsi_domisili: true },
-                distinct: ["provinsi_domisili"],
-                where: { provinsi_domisili: { not: null } },
-                orderBy: { provinsi_domisili: "asc" },
-            }),
-            prisma.peserta.findMany({
-                select: { kota_domisili: true },
-                distinct: ["kota_domisili"],
-                where: { kota_domisili: { not: null } },
-                orderBy: { kota_domisili: "asc" },
-            }),
-        ]);
+        const statuses = await prisma.participants.findMany({
+            select: { status: true },
+            distinct: ["status"],
+            where: { status: { not: null } },
+            orderBy: { status: "asc" },
+        });
+
+        // For provinces and cities, we want those that are actually used in addresses
+        // Query addresses with distinct provinces
+        const usedProvinces = await prisma.addresses.findMany({
+            select: {
+                provinces: {
+                    select: { name: true }
+                }
+            },
+            distinct: ["province_id"],
+            where: { province_id: { not: null } },
+        });
+
+        // Query addresses with distinct regencies (cities)
+        const usedCities = await prisma.addresses.findMany({
+            select: {
+                regencies: {
+                    select: { name: true }
+                }
+            },
+            distinct: ["regency_id"],
+            where: { regency_id: { not: null } },
+        });
+
+        const provinceNames = usedProvinces
+            .map(p => p.provinces?.name)
+            .filter((n): n is string => !!n)
+            .sort();
+            
+        const cityNames = usedCities
+            .map(c => c.regencies?.name)
+            .filter((n): n is string => !!n)
+            .sort();
 
         return NextResponse.json({
             statuses: statuses.map((s) => s.status).filter(Boolean),
-            provinces: provinces.map((p) => p.provinsi_domisili).filter(Boolean),
-            cities: cities.map((c) => c.kota_domisili).filter(Boolean),
+            provinces: provinceNames,
+            cities: cityNames,
         });
     } catch (error) {
         console.error("Error fetching filters:", error);

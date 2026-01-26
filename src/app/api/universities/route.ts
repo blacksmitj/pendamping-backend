@@ -1,78 +1,61 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "../../../../generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, Number(searchParams.get("page")) || 1);
-    const pageSize = Math.min(
-      100,
-      Math.max(1, Number(searchParams.get("pageSize")) || 10)
-    );
-    const search = (searchParams.get("search") ?? "").trim();
-    const sortBy = searchParams.get("sortBy") ?? "name";
-    const sortOrder = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const search = searchParams.get("search") || "";
+    const sortBy = searchParams.get("sortBy") || "name";
+    const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "asc";
+
     const skip = (page - 1) * pageSize;
 
-    const orderBy: Prisma.UniversityOrderByWithRelationInput =
-      sortBy === "city"
-        ? { city: { city_name: sortOrder as Prisma.SortOrder } }
-        : sortBy === "province"
-          ? { province: { prov_name: sortOrder as Prisma.SortOrder } }
-          : { name: sortOrder as Prisma.SortOrder };
-
-    const where = search
-      ? {
+    const where = search ? {
         OR: [
-          { name: { contains: search } },
-          { city: { city_name: { contains: search } } },
-          { province: { prov_name: { contains: search } } },
+            { name: { contains: search, mode: "insensitive" as const } },
+            { city: { contains: search, mode: "insensitive" as const } },
+            { province: { contains: search, mode: "insensitive" as const } },
         ],
-      }
-      : undefined;
+    } : {};
 
-    const [universities, total] = await Promise.all([
-      prisma.university.findMany({
-        take: pageSize,
-        skip,
-        orderBy,
+    const [total, items] = await Promise.all([
+      prisma.universities.count({ where }),
+      prisma.universities.findMany({
         where,
-        select: {
-          id: true,
-          name: true,
-          alamat: true,
-          city: { select: { city_name: true } },
-          province: { select: { prov_name: true } },
+        skip,
+        take: pageSize,
+        orderBy: {
+          [sortBy]: sortOrder,
         },
       }),
-      prisma.university.count({ where }),
     ]);
 
-    const data = universities.map((university) => ({
-      id: university.id,
-      name: university.name,
-      alamat: university.alamat,
-      city: university.city?.city_name ?? "",
-      province: university.province?.prov_name ?? "",
-      photo: null as string | null,
+    // Map to match frontend expectations (alamat, photo)
+    const formattedData = items.map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      alamat: u.address,
+      city: u.city,
+      province: u.province,
+      status: u.status,
+      photo: null, // No photo column in universities table yet
     }));
 
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
     return NextResponse.json({
-      data,
+      data: formattedData,
       total,
       page,
       pageSize,
-      totalPages,
+      totalPages: Math.ceil(total / pageSize),
     });
   } catch (error) {
-    console.error("[universities] Failed to fetch", error);
+    console.error("[universities-api] Error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch universities" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

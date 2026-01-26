@@ -283,7 +283,7 @@ export default function ParticipantsPage() {
         ) : participants.length > 0 ? (
           participants.map((participant: Participant) => (
             <TableRow
-              key={participant.no}
+              key={participant.id || participant.id_tkm}
               className="cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => router.push(`/participants/${participant.id_tkm}`)}
             >

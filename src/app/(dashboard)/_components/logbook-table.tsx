@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { PaginationControls, TableSkeleton, formatDate } from "./dashboard-ui";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { LogbookEntry } from "@/types/dashboard";
 
 type LogbookTableProps = {
@@ -124,12 +129,18 @@ export function LogbookTable({
               entries.map((entry) => (
                 <TableRow key={`${entry.id}-${entry.id_pendamping}-${entry.id_tkm}`}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-border/50">
+                        <AvatarImage src={entry.tkmPhoto || ""} alt={entry.tkmName || ""} />
+                        <AvatarFallback className="bg-primary/5 text-[10px] text-primary">
+                          {(entry.tkmName || "T").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col">
-                        <span className="max-w-[220px] truncate font-medium">
+                        <span className="max-w-[180px] truncate font-medium">
                           {entry.tkmName ?? "Tanpa nama"}
                         </span>
-                        <span className="max-w-[220px] truncate text-xs text-muted-foreground">
+                        <span className="max-w-[180px] truncate text-xs text-muted-foreground">
                           {entry.id_tkm}
                         </span>
                       </div>
@@ -137,10 +148,10 @@ export function LogbookTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 text-sm">
-                      <span className="max-w-[260px] truncate font-medium">
+                      <span className="max-w-[240px] truncate font-medium">
                         {entry.activitySummary ?? "Tidak ada ringkasan"}
                       </span>
-                      <span className="max-w-[260px] truncate text-xs text-muted-foreground">
+                      <span className="max-w-[240px] truncate text-xs text-muted-foreground">
                         {entry.mentoringMaterial ?? entry.obstacle ?? ""}
                       </span>
                     </div>
@@ -157,11 +168,19 @@ export function LogbookTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    <div className="flex flex-col">
-                      <span className="max-w-[220px] truncate">{entry.pendampingName ?? "-"}</span>
-                      <span className="max-w-[220px] truncate text-xs text-muted-foreground">
-                        {entry.pendampingUniversity ?? "Tidak ada universitas"}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-border/50">
+                        <AvatarImage src={entry.pendampingPhoto || ""} alt={entry.pendampingName || ""} />
+                        <AvatarFallback className="bg-primary/5 text-[10px] text-primary">
+                          {(entry.pendampingName || "P").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="max-w-[180px] truncate">{entry.pendampingName ?? "-"}</span>
+                        <span className="max-w-[180px] truncate text-xs text-muted-foreground">
+                          {entry.pendampingUniversity ?? "Tidak ada universitas"}
+                        </span>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>

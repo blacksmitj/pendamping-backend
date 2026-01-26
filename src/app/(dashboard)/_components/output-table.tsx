@@ -14,6 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CapaianOutput } from "@/types/dashboard";
 import { RefreshCw } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 type OutputTableProps = {
   entries: CapaianOutput[];
@@ -106,23 +111,39 @@ export function OutputTable({
               entries.map((entry) => (
                 <TableRow key={`${entry.id}-${entry.id_tkm}`}>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="max-w-[220px] truncate font-medium">
-                        {entry.tkmName ?? "Tanpa nama"}
-                      </span>
-                      <span className="max-w-[220px] truncate text-xs text-muted-foreground">
-                        {entry.id_tkm}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-border/50">
+                        <AvatarImage src={entry.tkmPhoto || ""} alt={entry.tkmName || ""} />
+                        <AvatarFallback className="bg-primary/5 text-[10px] text-primary">
+                          {(entry.tkmName || "T").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="max-w-[180px] truncate font-medium">
+                          {entry.tkmName ?? "Tanpa nama"}
+                        </span>
+                        <span className="max-w-[180px] truncate text-xs text-muted-foreground">
+                          {entry.id_tkm}
+                        </span>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    <div className="flex flex-col">
-                      <span className="max-w-[220px] truncate">
-                        {entry.pendampingName ?? "-"}
-                      </span>
-                      <span className="max-w-[220px] truncate text-xs text-muted-foreground">
-                        {entry.id_pendamping ?? "-"}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-border/50">
+                        <AvatarImage src={entry.pendampingPhoto || ""} alt={entry.pendampingName || ""} />
+                        <AvatarFallback className="bg-primary/5 text-[10px] text-primary">
+                          {(entry.pendampingName || "P").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="max-w-[180px] truncate text-foreground font-medium">
+                          {entry.pendampingName ?? "-"}
+                        </span>
+                        <span className="max-w-[180px] truncate text-xs text-muted-foreground">
+                          {entry.id_pendamping ?? "-"}
+                        </span>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">

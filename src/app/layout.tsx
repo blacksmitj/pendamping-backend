@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Dashboard for participants, mentors, and universities",
 };
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +37,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            {children}
+            <Toaster position="top-center" />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
