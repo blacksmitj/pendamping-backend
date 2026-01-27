@@ -160,6 +160,11 @@ export default function ParticipantDetailPage({
                                         <span className="font-medium">{participant.batch_pembekalan || "-"}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
+                                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-muted-foreground">Univ:</span>
+                                        <span className="font-medium">{(participant as any).university?.name || "-"}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-muted-foreground">WA:</span>
                                         <span className="font-medium">{participant.no_whatsapp || "-"}</span>

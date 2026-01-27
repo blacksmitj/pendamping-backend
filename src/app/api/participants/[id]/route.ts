@@ -17,6 +17,7 @@ export async function GET(
                 businesses: true,
                 batches: true,
                 participant_groups: true,
+                universities: true,
                 profiles: {
                     include: {
                         users: true,
@@ -157,8 +158,10 @@ export async function GET(
                     actionPlanFile: null,
                 },
 
-                // University - Removed in new schema?
-                university: null
+                university: (participant as any).universities ? {
+                    id: (participant as any).universities.id,
+                    name: (participant as any).universities.name,
+                } : null
             },
         };
 

@@ -18,10 +18,8 @@ export async function GET() {
     const participantsCount = await prisma.participants.count({
       where: {
         status: "active",
-        profiles: {
-            universities: {
-                status: "active"
-            }
+        universities: {
+            status: "active"
         }
       },
     });
@@ -47,10 +45,8 @@ export async function GET() {
         where: {
             businesses: {
                 participants: {
-                    profiles: {
-                        universities: {
-                            status: 'active'
-                        }
+                    universities: {
+                        status: 'active'
                     }
                 }
             }
@@ -68,8 +64,8 @@ export async function GET() {
         AVG(CAST(addr.longitude AS DOUBLE PRECISION)) as lng
       FROM addresses addr
       JOIN profiles prof ON addr.profile_id = prof.id
-      JOIN universities u ON prof.university_id = u.id
       JOIN participants p ON prof.id = p.profile_id
+      JOIN universities u ON p.university_id = u.id
       LEFT JOIN businesses b ON p.id = b.participant_id
       WHERE p.status = 'active'
         AND addr.regency_name IS NOT NULL
@@ -118,7 +114,7 @@ export async function GET() {
       JOIN participants p ON pg.participant_id = p.id
       LEFT JOIN businesses b ON p.id = b.participant_id
       LEFT JOIN profiles prof ON p.profile_id = prof.id
-      JOIN universities univ ON prof.university_id = univ.id
+      JOIN universities univ ON p.university_id = univ.id
       LEFT JOIN users u ON prof.user_id = u.id
       WHERE p.status = 'active' AND univ.status = 'active'
       ORDER BY pg.growth DESC
@@ -166,7 +162,8 @@ export async function GET() {
               u.status as univ_status
             FROM universities u
             JOIN profiles prof ON u.id = prof.university_id
-            JOIN mentors m ON prof.user_id = m.user_id
+            JOIN users us ON prof.user_id = us.id
+            JOIN mentors m ON us.id = m.user_id
             LEFT JOIN mentor_participants mp ON m.id = mp.mentor_id
             WHERE u.status = 'active'
           )
@@ -234,8 +231,7 @@ export async function GET() {
         FROM RankedReports r1
         JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
         JOIN participants p ON r1.participant_id = p.id
-        JOIN profiles prof ON p.profile_id = prof.id
-        JOIN universities u ON prof.university_id = u.id
+        JOIN universities u ON p.university_id = u.id
         WHERE r1.rn_asc = 1 AND r2.rn_desc = 1 AND u.status = 'active'
       )
       SELECT AVG(growth) as avg_growth FROM ParticipantGrowth

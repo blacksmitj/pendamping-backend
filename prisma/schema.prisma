@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma/client"
 }
 
 datasource db {
@@ -8,7 +7,7 @@ datasource db {
 }
 
 model activity_logs {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id            String    @id @default(uuid()) @db.Uuid
   user_id       String?   @db.Uuid
   activity      String
   original_data Json?
@@ -19,7 +18,7 @@ model activity_logs {
 }
 
 model addresses {
-  id               String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String     @id @default(uuid()) @db.Uuid
   profile_id       String?    @db.Uuid
   label            String?    @db.VarChar(255)
   province_id      String?    @db.VarChar(2)
@@ -45,7 +44,7 @@ model addresses {
 }
 
 model batches {
-  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id           String         @id @default(uuid()) @db.Uuid
   code         String?        @unique @db.VarChar(50)
   start_date   DateTime?      @db.Date
   created_at   DateTime?      @default(now()) @db.Timestamptz(6)
@@ -62,7 +61,7 @@ model business_documents {
 }
 
 model business_employees {
-  id                String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                String      @id @default(uuid()) @db.Uuid
   business_id       String?     @db.Uuid
   name              String?     @db.VarChar(255)
   nik               String?     @db.VarChar(32)
@@ -82,7 +81,7 @@ model business_employees {
 }
 
 model businesses {
-  id                  String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                  String               @id @default(uuid()) @db.Uuid
   participant_id      String?              @db.Uuid
   legacy_tkm_id       String?              @db.VarChar(100)
   name                String?              @db.VarChar(255)
@@ -121,7 +120,7 @@ model districts {
 }
 
 model documents {
-  id                       String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                       String                    @id @default(uuid()) @db.Uuid
   entity_id                String                    @db.Uuid
   entity_type              String                    @db.VarChar(50)
   label                    String                    @db.VarChar(255)
@@ -137,7 +136,7 @@ model documents {
 }
 
 model emergency_contacts {
-  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id             String        @id @default(uuid()) @db.Uuid
   participant_id String?       @db.Uuid
   legacy_tkm_id  String?       @db.VarChar(100)
   full_name      String?       @db.VarChar(255)
@@ -160,10 +159,8 @@ model logbook_documents {
 }
 
 model logbooks {
-  id                 String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                 String              @id @default(uuid()) @db.Uuid
   mentor_id          String?             @db.Uuid
-  participant_id     String?             @db.Uuid
-  legacy_tkm_id      String?             @db.VarChar(100)
   activity_date      DateTime            @db.Date
   start_time         DateTime?           @db.Time(6)
   end_time           DateTime?           @db.Time(6)
@@ -182,13 +179,22 @@ model logbooks {
   updated_at         DateTime?           @default(now()) @db.Timestamptz(6)
   logbook_documents  logbook_documents[]
   mentors            mentors?            @relation(fields: [mentor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  participants       participants?       @relation(fields: [participant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  logbook_attendees  logbook_attendees[]
+}
 
-  @@index([legacy_tkm_id], map: "idx_logbooks_tkm")
+model logbook_attendees {
+  id             String        @id @default(uuid()) @db.Uuid
+  logbook_id     String?       @db.Uuid
+  participant_id String?       @db.Uuid
+  logbooks       logbooks?     @relation(fields: [logbook_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  participants   participants? @relation(fields: [participant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([logbook_id])
+  @@index([participant_id])
 }
 
 model mentor_participants {
-  id                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                String        @id @default(uuid()) @db.Uuid
   mentor_id         String?       @db.Uuid
   participant_id    String?       @db.Uuid
   legacy_tkm_id     String?       @db.VarChar(100)
@@ -204,7 +210,7 @@ model mentor_participants {
 }
 
 model mentors {
-  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                  String                @id @default(uuid()) @db.Uuid
   user_id             String?               @unique @db.Uuid
   legacy_id           BigInt?
   specialization      String?               @db.VarChar(255)
@@ -226,7 +232,7 @@ model monthly_report_documents {
 }
 
 model monthly_reports {
-  id                           String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                           String                     @id @default(uuid()) @db.Uuid
   participant_id               String?                    @db.Uuid
   mentor_id                    String?                    @db.Uuid
   legacy_tkm_id                String?                    @db.VarChar(100)
@@ -265,7 +271,7 @@ model participant_documents {
 }
 
 model participant_groups {
-  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id            String         @id @default(uuid()) @db.Uuid
   legacy_tkm_id String?        @db.VarChar(50)
   name          String?        @db.VarChar(255)
   created_at    DateTime?      @default(now()) @db.Timestamptz(6)
@@ -273,11 +279,12 @@ model participant_groups {
 }
 
 model participants {
-  id                     String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                     String                  @id @default(uuid()) @db.Uuid
   profile_id             String?                 @db.Uuid
   batch_id               String?                 @db.Uuid
   group_id               String?                 @db.Uuid
   legacy_tkm_id          String?                 @unique @db.VarChar(100)
+  university_id          String?                 @db.Uuid
   status                 String?                 @db.VarChar(50)
   last_education         String?                 @db.VarChar(100)
   disability_status      Boolean?                @default(false)
@@ -299,32 +306,34 @@ model participants {
   updated_at             DateTime?               @default(now()) @db.Timestamptz(6)
   businesses             businesses[]
   emergency_contacts     emergency_contacts[]
-  logbooks               logbooks[]
+  logbook_attendees      logbook_attendees[]
   mentor_participants    mentor_participants[]
   monthly_reports        monthly_reports[]
   participant_documents  participant_documents[]
   batches                batches?                @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   participant_groups     participant_groups?     @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   profiles               profiles?               @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  universities           universities?           @relation(fields: [university_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([legacy_tkm_id], map: "idx_participants_tkm")
 }
 
 model universities {
-  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String     @db.VarChar(255)
-  address    String?
-  city       String?    @db.VarChar(100)
-  province   String?    @db.VarChar(100)
-  status     String     @default("active") @db.VarChar(25)
-  created_at DateTime?  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime?  @default(now()) @db.Timestamptz(6)
-  legacy_id  Int?       @unique
-  profiles   profiles[]
+  id           String         @id @default(uuid()) @db.Uuid
+  name         String         @db.VarChar(255)
+  address      String?
+  city         String?        @db.VarChar(100)
+  province     String?        @db.VarChar(100)
+  created_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  legacy_id    Int?           @unique
+  status       String?        @default("active") @db.VarChar(50)
+  profiles     profiles[]
+  participants participants[]
 }
 
 model profiles {
-  id                String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                String         @id @default(uuid()) @db.Uuid
   user_id           String?        @unique @db.Uuid
   university_id     String?        @db.Uuid
   full_name         String?        @db.VarChar(255)
@@ -366,7 +375,7 @@ model regencies {
 }
 
 model roles {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id         String    @id @default(uuid()) @db.Uuid
   name       String    @unique @db.VarChar(255)
   guard_name String    @db.VarChar(255)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
@@ -384,7 +393,7 @@ model upload_report_documents {
 }
 
 model upload_reports {
-  id                      String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                      String                    @id @default(uuid()) @db.Uuid
   admin_user_id           String?                   @db.Uuid
   note                    String?
   verified                Boolean?                  @default(false)
@@ -396,7 +405,7 @@ model upload_reports {
 }
 
 model users {
-  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                String           @id @default(uuid()) @db.Uuid
   role_id           String?          @db.Uuid
   username          String?          @unique @db.VarChar(255)
   email             String           @unique @db.VarChar(255)
