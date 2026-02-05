@@ -61,6 +61,8 @@ export type ListQueryParams = {
   status?: string;
   province?: string;
   city?: string;
+  sector?: string;
+  batch?: string;
 };
 
 export type MapDistribution = {
@@ -130,6 +132,9 @@ export type LogbookEntry = {
   month_report: number | null;
   created_at: string | null;
   updated_at: string | null;
+  isGroup?: boolean;
+  attendeeCount?: number;
+  attendees?: string[];
 };
 
 export type CapaianOutput = {

@@ -6,14 +6,11 @@ import { ApiListResponse, ListQueryParams, Participant } from "@/types/dashboard
 const buildQueryString = (params: ListQueryParams) => {
   const searchParams = new URLSearchParams();
 
-  if (params.page) searchParams.set("page", params.page.toString());
-  if (params.pageSize) searchParams.set("pageSize", params.pageSize.toString());
-  if (params.search) searchParams.set("search", params.search);
-  if (params.sortBy) searchParams.set("sortBy", params.sortBy);
-  if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
-  if (params.status) searchParams.set("status", params.status);
-  if (params.province) searchParams.set("province", params.province);
-  if (params.city) searchParams.set("city", params.city);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value.toString());
+    }
+  });
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";

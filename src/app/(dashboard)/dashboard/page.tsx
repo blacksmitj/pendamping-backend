@@ -7,6 +7,7 @@ import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { TopPerformers } from "@/components/dashboard/top-performers";
 import { UniversityStats } from "@/components/dashboard/university-stats";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 // Dynamic import for Leaflet map to avoid SSR issues
@@ -58,15 +59,23 @@ export default function DashboardPage() {
           <span className="text-xs text-muted-foreground hidden md:inline-block">
             Last updated: {lastUpdated}
           </span>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => window.open('/api/export/output', '_blank')}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export Excel
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select onValueChange={(value) => {
+              if (value === "output") window.open('/api/export/output', '_blank');
+              if (value === "logbook") window.open('/api/export/logbook', '_blank');
+            }}>
+              <SelectTrigger className="h-9 w-[180px] bg-primary text-primary-foreground hover:bg-primary/90">
+                <div className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  <span>Export Excel</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="output">Laporan Capaian Output</SelectItem>
+                <SelectItem value="logbook">Laporan Detail Logbook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="outline"
             size="sm"

@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import {
+  RefreshCw,
+  Search,
+  Filter,
+  ArrowUpDown,
+  Layers,
+  MapPin,
+  Activity,
+  Tag,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +34,19 @@ import {
 } from "../_components/dashboard-ui";
 import { TableCell, TableRow } from "@/components/ui/table";
 
-const sortOptions = [
-  { value: "revenue_growth", label: "Highest Growth %", sortBy: "revenue_growth", sortOrder: "desc" },
-  { value: "omset_highest", label: "Highest Revenue", sortBy: "omset_highest", sortOrder: "desc" },
-  { value: "omset_lowest", label: "Lowest Revenue", sortBy: "omset_lowest", sortOrder: "asc" },
-  { value: "name_asc", label: "Name A-Z", sortBy: "name", sortOrder: "asc" },
-  { value: "name_desc", label: "Name Z-A", sortBy: "name", sortOrder: "desc" },
-  { value: "status", label: "Status", sortBy: "status", sortOrder: "asc" },
+const fieldOptions = [
+  { value: "registered", label: "Tanggal Daftar" },
+  { value: "name", label: "Nama Peserta" },
+  { value: "business_name", label: "Nama Usaha" },
+  { value: "sector", label: "Bidang Usaha" },
+  { value: "revenue_growth", label: "Pertumbuhan Omzet" },
+  { value: "omset_highest", label: "Nilai Omzet" },
+  { value: "status", label: "Status" },
+];
+
+const orderOptions = [
+  { value: "desc", label: "Terbaru/Terbesar (Z-A)" },
+  { value: "asc", label: "Terlama/Terkecil (A-Z)" },
 ];
 
 const pageSizeOptions = [10, 20, 50];
@@ -71,19 +88,24 @@ export default function ParticipantsPage() {
   const [participantSearch, setParticipantSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [sortOption, setSortOption] = useState(sortOptions[0].value);
+  const [sortBy, setSortBy] = useState(fieldOptions[0].value);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Filters State
   const [statusFilter, setStatusFilter] = useState("all");
   const [provinceFilter, setProvinceFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
+  const [sectorFilter, setSectorFilter] = useState("all");
+  const [batchFilter, setBatchFilter] = useState("all");
 
   // Filter Options State
   const [filterOptions, setFilterOptions] = useState<{
     statuses: string[];
     provinces: string[];
     cities: string[];
-  }>({ statuses: [], provinces: [], cities: [] });
+    sectors: string[];
+    batches: string[];
+  }>({ statuses: [], provinces: [], cities: [], sectors: [], batches: [] });
 
   useEffect(() => {
     // Fetch filter options
@@ -95,14 +117,16 @@ export default function ParticipantsPage() {
             statuses: data.statuses || [],
             provinces: data.provinces || [],
             cities: data.cities || [],
+            sectors: data.sectors || [],
+            batches: data.batches || [],
           });
         }
       })
       .catch((err) => console.error("Failed to fetch filters", err));
   }, []);
 
-  const activeSort =
-    sortOptions.find((option) => option.value === sortOption) ?? sortOptions[0];
+  // const activeSort =
+  //   sortOptions.find((option) => option.value === sortOption) ?? sortOptions[0];
 
   const {
     data: participantsResponse,
@@ -114,11 +138,13 @@ export default function ParticipantsPage() {
     page,
     pageSize,
     search: participantSearch,
-    sortBy: activeSort.sortBy,
-    sortOrder: activeSort.sortOrder as "asc" | "desc",
+    sortBy: sortBy,
+    sortOrder: sortOrder,
     status: statusFilter !== "all" ? statusFilter : undefined,
     province: provinceFilter !== "all" ? provinceFilter : undefined,
     city: cityFilter !== "all" ? cityFilter : undefined,
+    sector: sectorFilter !== "all" ? sectorFilter : undefined,
+    batch: batchFilter !== "all" ? batchFilter : undefined,
   });
 
   const participants = useMemo(
@@ -172,89 +198,25 @@ export default function ParticipantsPage() {
         isLoading={participantsLoading}
         isError={participantsError}
         emptyCopy="No participants match your search."
-        columns={["Photo", "Name & business", "Location", "Status", "Growth", "New Employees"]}
+        columns={["Peserta", "Usaha & Industri", "Lokasi", "Status", "Growth", "Karyawan"]}
         customHeader={
           <div className="flex flex-col gap-6">
-            {/* Row 1: Title */}
-            <div>
-              <h3 className="text-lg font-semibold text-card-foreground">Participant list</h3>
-              <p className="text-sm text-muted-foreground">Filter and manage program participants.</p>
-            </div>
-
-            {/* Row 2: Filters & Sort */}
-            <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-center">
-              {/* Filters */}
-              <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
-                <SelectTrigger className="h-9 w-full sm:w-[130px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  {filterOptions.statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={provinceFilter} onValueChange={handleFilterChange(setProvinceFilter)}>
-                <SelectTrigger className="h-9 w-full sm:w-[150px]">
-                  <SelectValue placeholder="Province" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Provinces</SelectItem>
-                  {filterOptions.provinces.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={cityFilter} onValueChange={handleFilterChange(setCityFilter)}>
-                <SelectTrigger className="h-9 w-full sm:w-[150px]">
-                  <SelectValue placeholder="City" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Cities</SelectItem>
-                  {filterOptions.cities.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* General Sort */}
-              <Select
-                value={sortOption}
-                onValueChange={(value) => {
-                  setSortOption(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-9 w-full sm:w-[180px]">
-                  <SelectValue placeholder="Sort Order" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Row 3: Search (Left) & Page Size (Right) */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <Input
-                placeholder="Search by name, business, or city"
-                value={participantSearch}
-                onChange={(e) => {
-                  setParticipantSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full sm:w-80 bg-muted border-input text-foreground placeholder:text-muted-foreground h-9"
-              />
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+            {/* Row 1: Search & Rows Per Page */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="relative w-full md:max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama, usaha, atau kota..."
+                  value={participantSearch}
+                  onChange={(e) => {
+                    setParticipantSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-10 bg-muted/50 border-input h-10"
+                />
+              </div>
+              <div className="flex items-center gap-3 w-full md:w-auto self-end">
+                <span className="text-sm font-medium text-muted-foreground">Tampilkan</span>
                 <Select
                   value={String(pageSize)}
                   onValueChange={(value) => {
@@ -262,13 +224,165 @@ export default function ParticipantsPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="h-9 w-[80px]">
-                    <SelectValue placeholder="Size" />
+                  <SelectTrigger className="h-10 w-[100px] bg-muted/50">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {pageSizeOptions.map((size) => (
                       <SelectItem key={size} value={String(size)}>
-                        {size}
+                        {size} Baris
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Row 2: Filters Group */}
+            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-4 w-4 text-primary" />
+                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Filter Peserta</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Status</label>
+                  <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
+                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Status" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      {filterOptions.statuses.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Provinsi</label>
+                  <Select value={provinceFilter} onValueChange={handleFilterChange(setProvinceFilter)}>
+                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Provinsi" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Provinsi</SelectItem>
+                      {filterOptions.provinces.map((p) => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Kota/Kabupaten</label>
+                  <Select value={cityFilter} onValueChange={handleFilterChange(setCityFilter)}>
+                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Kota" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Kota</SelectItem>
+                      {filterOptions.cities.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Industri</label>
+                  <Select value={sectorFilter} onValueChange={handleFilterChange(setSectorFilter)}>
+                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Bidang Usaha" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Industri</SelectItem>
+                      {filterOptions.sectors.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Batch</label>
+                  <Select value={batchFilter} onValueChange={handleFilterChange(setBatchFilter)}>
+                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Batch" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Batch</SelectItem>
+                      {filterOptions.batches.map((b) => (
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Sorting Group */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-primary" />
+                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Urutkan</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 w-full">
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setSortBy(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full sm:w-[220px] bg-background border-primary/20">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Berdasarkan:</span>
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fieldOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={sortOrder}
+                  onValueChange={(value) => {
+                    setSortOrder(value as "asc" | "desc");
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full sm:w-[220px] bg-background border-primary/20">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Urutan:</span>
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orderOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -277,6 +391,7 @@ export default function ParticipantsPage() {
             </div>
           </div>
         }
+
       >
         {participantsLoading ? (
           <TableSkeleton rows={6} columns={6} />
@@ -288,15 +403,25 @@ export default function ParticipantsPage() {
               onClick={() => router.push(`/participants/${participant.id_tkm}`)}
             >
               <TableCell>
-                <AvatarBubble photo={participant.photo} name={participant.nama} />
+                <div className="flex items-center gap-3">
+                  <AvatarBubble photo={participant.photo} name={participant.nama} />
+                  <div className="flex flex-col">
+                    <span className="max-w-[220px] truncate font-semibold text-foreground">
+                      {participant.nama ?? "No name"}
+                    </span>
+                    <span className="max-w-[220px] truncate text-xs text-muted-foreground">
+                      ID: {participant.id_tkm}
+                    </span>
+                  </div>
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
                   <span className="max-w-[220px] truncate font-medium">
-                    {participant.nama ?? "No name"}
-                  </span>
-                  <span className="max-w-[220px] truncate text-xs text-muted-foreground">
                     {participant.nama_usaha ?? "No business name"}
+                  </span>
+                  <span className="max-w-[220px] truncate text-xs text-muted-foreground italic">
+                    {participant.sektor_usaha ?? "No sector"}
                   </span>
                 </div>
               </TableCell>

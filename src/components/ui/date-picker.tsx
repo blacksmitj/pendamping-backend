@@ -3,6 +3,7 @@ import { ChevronDownIcon, Calendar as CalendarIcon } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
+import { Calendar } from "./calendar";
 
 type DatePickerProps = {
   value?: string;
@@ -28,10 +29,10 @@ export function DatePicker({
 
   const display = selectedDate
     ? new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }).format(selectedDate)
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(selectedDate)
     : placeholder;
 
   const handleSelect = (date?: Date) => {
@@ -64,7 +65,7 @@ export function DatePicker({
       </Button>
       {open ? (
         <div className="absolute z-50 mt-2 w-auto rounded-md border border-border bg-background p-2 shadow-lg">
-          <DayPicker
+          <Calendar
             mode="single"
             captionLayout="dropdown"
             selected={selectedDate}

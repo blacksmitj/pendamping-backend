@@ -11,16 +11,23 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const sortBy = searchParams.get("sortBy") || "name";
     const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "asc";
+    const status = searchParams.get("status");
 
     const skip = (page - 1) * pageSize;
 
-    const where = search ? {
-        OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { city: { contains: search, mode: "insensitive" as const } },
-            { province: { contains: search, mode: "insensitive" as const } },
-        ],
-    } : {};
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" as const } },
+        { city: { contains: search, mode: "insensitive" as const } },
+        { province: { contains: search, mode: "insensitive" as const } },
+      ];
+    }
+
+    if (status && status !== "all") {
+      where.status = status;
+    }
 
     const [total, items] = await Promise.all([
       prisma.universities.count({ where }),

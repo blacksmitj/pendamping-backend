@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-// Helper to handle BigInt serialization
-function serializeBigInt(data: any): any {
+// Helper to serialize BigInt
+function serializeBigInt(obj: any): any {
   return JSON.parse(
-    JSON.stringify(data, (key, value) =>
+    JSON.stringify(obj, (key, value) =>
       typeof value === "bigint" ? value.toString() : value
     )
   );
@@ -14,248 +15,228 @@ function serializeBigInt(data: any): any {
 
 export async function GET() {
   try {
+    // Shared filters
+    const activeUnivFilter: Prisma.universitiesWhereInput = {
+      status: { in: ['aktif', 'active'] }
+    };
+    const activeParticipantFilter: Prisma.participantsWhereInput = {
+      status: { in: ['aktif', 'active'] },
+      universities: activeUnivFilter
+    };
+
     // 1. Basic Counts
     const participantsCount = await prisma.participants.count({
+      where: activeParticipantFilter,
+    });
+
+    const mentorsCount = await prisma.mentors.count({
       where: {
-        status: "active",
-        universities: {
-            status: "active"
+        users: {
+          profiles: {
+            universities: activeUnivFilter
+          }
         }
       },
     });
 
-    const mentorsCount = await prisma.users.count({
-      where: {
-        roles: {
-            name: { in: ['mentor', 'user'] }
-        },
-        profiles: {
-            universities: {
-                status: "active"
-            }
-        }
-      },
+    const universitiesCount = await prisma.universities.count({
+      where: activeUnivFilter
     });
-
-    const universitiesCount = (prisma as any).universities ? await (prisma as any).universities.count({
-        where: { status: 'active' }
-    }) : 0;
 
     const newEmployeesCount = await prisma.business_employees.count({
-        where: {
-            businesses: {
-                participants: {
-                    universities: {
-                        status: 'active'
-                    }
-                }
-            }
+      where: {
+        businesses: {
+          participants: {
+            universities: activeUnivFilter
+          }
         }
+      }
     });
 
-    // 2. Map Data (Distribution by Province)
-    // Participants -> Profiles -> Addresses -> Provinces
-    // We want active participants distribution
-    const regencyDistributionRaw: any[] = await prisma.$queryRaw`
-      SELECT 
-        addr.regency_name as name, 
-        COUNT(DISTINCT b.id) as value,
-        AVG(CAST(addr.latitude AS DOUBLE PRECISION)) as lat,
-        AVG(CAST(addr.longitude AS DOUBLE PRECISION)) as lng
-      FROM addresses addr
-      JOIN profiles prof ON addr.profile_id = prof.id
-      JOIN participants p ON prof.id = p.profile_id
-      JOIN universities u ON p.university_id = u.id
-      LEFT JOIN businesses b ON p.id = b.participant_id
-      WHERE p.status = 'active'
-        AND addr.regency_name IS NOT NULL
-        AND u.status = 'active'
-      GROUP BY addr.regency_name
-      ORDER BY value DESC
-    `;
+    // Fetch Base Data for aggregations
+    // To avoid too many raw queries and simplify logic, we fetch active participants with necessary relations
+    // For a dashboard, we might want to aggregate more efficiently, but for clarity and "No Raw SQL" req:
+    const activeData = await prisma.participants.findMany({
+      where: activeParticipantFilter,
+      include: {
+        profiles: {
+          include: {
+            users: true,
+            addresses: true,
+          }
+        },
+        businesses: {
+          include: {
+            business_employees: true
+          }
+        },
+        monthly_reports: {
+          orderBy: [
+            { report_year: 'asc' },
+            { report_month: 'asc' }
+          ]
+        },
+        universities: true
+      }
+    });
+
+    // 2. Map Data (Distribution by Regency)
+    const distributionMap = new Map<string, { value: number; lat: number; lng: number; count: number }>();
+    activeData.forEach(p => {
+      const address = p.profiles?.addresses?.[0]; // Get primary/latest address
+      if (address?.regency_name) {
+        const name = address.regency_name;
+        const current = distributionMap.get(name) || { value: 0, lat: 0, lng: 0, count: 0 };
+
+        // Business existence counts towards value (as per legacy query)
+        if (p.businesses.length > 0) current.value++;
+
+        if (address.latitude && address.longitude) {
+          current.lat += Number(address.latitude);
+          current.lng += Number(address.longitude);
+          current.count++;
+        }
+        distributionMap.set(name, current);
+      }
+    });
+
+    const regencyDistribution = Array.from(distributionMap.entries()).map(([name, d]) => ({
+      name,
+      value: d.value,
+      lat: d.count > 0 ? d.lat / d.count : 0,
+      lng: d.count > 0 ? d.lng / d.count : 0
+    })).sort((a, b) => b.value - a.value);
 
     // 3. Top 10 TKML Omzet Rate (Revenue Growth)
-    // Logic: (Last Revenue - First Revenue) / First Revenue * 100
-    // We need to fetch participants with their first and last monthly report revenue.
-    // Complex to do efficiently in one query without Window Functions.
-    // Use raw SQL with window functions.
-    const topOmzetParticipants = await prisma.$queryRaw`
-      WITH RankedReports AS (
-        SELECT 
-          mr.participant_id,
-          mr.revenue,
-          mr.report_year,
-          mr.report_month,
-          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
-          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
-        FROM monthly_reports mr
-        WHERE mr.revenue IS NOT NULL
-      ),
-      ParticipantGrowth AS (
-        SELECT 
-          r1.participant_id,
-          r1.revenue as first_revenue,
-          r2.revenue as last_revenue,
-          CASE 
-            WHEN r1.revenue = 0 THEN 0 
-            ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
-          END as growth
-        FROM RankedReports r1
-        JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
-        WHERE r1.rn_asc = 1 AND r2.rn_desc = 1
-      )
-      SELECT 
-        COALESCE(prof.full_name, u.username, 'Unknown') as nama, 
-        COALESCE(b.name, 'Unknown Business') as nama_usaha, 
-        prof.avatar_url as photo,
-        pg.growth,
-        pg.last_revenue
-      FROM ParticipantGrowth pg
-      JOIN participants p ON pg.participant_id = p.id
-      LEFT JOIN businesses b ON p.id = b.participant_id
-      LEFT JOIN profiles prof ON p.profile_id = prof.id
-      JOIN universities univ ON p.university_id = univ.id
-      LEFT JOIN users u ON prof.user_id = u.id
-      WHERE p.status = 'active' AND univ.status = 'active'
-      ORDER BY pg.growth DESC
-      LIMIT 10
-    `;
+    const participantsWithGrowth = activeData.map(p => {
+      const reports = p.monthly_reports || [];
+      const first = reports[0];
+      const last = reports[reports.length - 1];
+      let growth = 0;
+      if (first && last && Number(first.revenue) > 0) {
+        growth = ((Number(last.revenue) - Number(first.revenue)) / Number(first.revenue)) * 100;
+      }
+      return {
+        nama: p.profiles?.full_name || p.profiles?.users?.email || "Unknown",
+        nama_usaha: p.businesses?.[0]?.name || "Unknown Business",
+        photo: p.profiles?.avatar_url,
+        growth,
+        last_revenue: last ? Number(last.revenue) : 0
+      };
+    }).sort((a, b) => b.growth - a.growth).slice(0, 10);
 
     // 4. University Stats
-    let universityStats: any[] = [];
-    if ((prisma as any).universities) {
-        const universityStatsRaw: any[] = await prisma.$queryRaw`
-          WITH RankedReports AS (
-            SELECT 
-              mr.participant_id,
-              mr.revenue,
-              ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
-              ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
-            FROM monthly_reports mr
-            WHERE mr.revenue IS NOT NULL
-          ),
-          ParticipantGrowth AS (
-            SELECT 
-              r1.participant_id,
-              CASE 
-                WHEN r1.revenue = 0 THEN 0 
-                ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
-              END as growth
-            FROM RankedReports r1
-            JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
-            WHERE r1.rn_asc = 1 AND r2.rn_desc = 1
-          ),
-          ParticipantStats AS (
-            SELECT 
-              p.id as participant_id,
-              COALESCE(pg.growth, 0) as growth,
-              (SELECT COUNT(*) FROM business_employees be JOIN businesses b ON be.business_id = b.id WHERE b.participant_id = p.id) as emp_count
-            FROM participants p
-            LEFT JOIN ParticipantGrowth pg ON p.id = pg.participant_id
-            WHERE p.status = 'active'
-          ),
-          UnivStats AS (
-            SELECT 
-              u.name as university_name,
-              m.id as mentor_id,
-              mp.participant_id,
-              u.status as univ_status
-            FROM universities u
-            JOIN profiles prof ON u.id = prof.university_id
-            JOIN users us ON prof.user_id = us.id
-            JOIN mentors m ON us.id = m.user_id
-            LEFT JOIN mentor_participants mp ON m.id = mp.mentor_id
-            WHERE u.status = 'active'
-          )
-          SELECT 
-            us.university_name,
-            CAST(COUNT(DISTINCT us.mentor_id) AS INTEGER) as total_mentors,
-            CAST(COUNT(DISTINCT ps.participant_id) AS INTEGER) as total_participants,
-            COALESCE(CAST(SUM(ps.emp_count) AS INTEGER), 0) as total_new_employees,
-            COALESCE(AVG(ps.growth), 0) as avg_growth
-          FROM UnivStats us
-          LEFT JOIN ParticipantStats ps ON us.participant_id = ps.participant_id
-          GROUP BY us.university_name
-          ORDER BY total_participants DESC
-        `;
+    const univStatsMap = new Map<string, { total_mentors: Set<string>; total_participants: number; total_new_employees: number; growth_sum: number }>();
 
-        universityStats = universityStatsRaw.map(u => ({
-          university_name: u.university_name,
-          total_mentors: Number(u.total_mentors),
-          total_participants: Number(u.total_participants),
-          total_new_employees: Number(u.total_new_employees),
-          avg_growth: Number(u.avg_growth)
-        }));
-    } else {
-        console.warn("[dashboard-summary] Skipping universityStats because model is not available in Prisma client");
-    }
+    // Fetch mentors with university info from profiles
+    const mentors = await prisma.mentors.findMany({
+      include: {
+        users: {
+          include: {
+            profiles: {
+              include: { universities: true }
+            }
+          }
+        }
+      }
+    });
+
+    // Map university ID to name for easier mentor lookups
+    const univIdToName = new Map<string, string>();
+    activeData.forEach(p => {
+      if (p.universities) {
+        univIdToName.set(p.universities.id, p.universities.name);
+      }
+    });
+
+    activeData.forEach(p => {
+      const univName = p.universities?.name;
+      if (univName) {
+        const stats = univStatsMap.get(univName) || { total_mentors: new Set(), total_participants: 0, total_new_employees: 0, growth_sum: 0 };
+        stats.total_participants++;
+        stats.total_new_employees += p.businesses.reduce((acc, b) => acc + b.business_employees.length, 0);
+
+        const reports = p.monthly_reports || [];
+        if (reports.length >= 2 && Number(reports[0].revenue) > 0) {
+          stats.growth_sum += ((Number(reports[reports.length - 1].revenue) - Number(reports[0].revenue)) / Number(reports[0].revenue)) * 100;
+        }
+        univStatsMap.set(univName, stats);
+      }
+    });
+
+    // Add mentors to univ stats based on their profile's university_id
+    mentors.forEach(m => {
+      const univId = m.users?.profiles?.university_id;
+      if (univId) {
+        const univName = univIdToName.get(univId);
+        if (univName) {
+          const stats = univStatsMap.get(univName);
+          if (stats) {
+            stats.total_mentors.add(m.id);
+          }
+        }
+      }
+    });
+
+    const universityStats = Array.from(univStatsMap.entries()).map(([name, s]) => ({
+      university_name: name,
+      total_mentors: s.total_mentors.size,
+      total_participants: s.total_participants,
+      total_new_employees: s.total_new_employees,
+      avg_growth: s.total_participants > 0 ? s.growth_sum / s.total_participants : 0
+    })).sort((a, b) => b.total_participants - a.total_participants);
 
     // 5. Top Mentors by Visits
-    const topMentorsVisits = await prisma.$queryRaw`
-      SELECT 
-        COALESCE(u.username, 'Unknown') as name,
-        prof.avatar_url as foto,
-        COUNT(l.id) as visit_count
-      FROM logbooks l
-      JOIN mentors m ON l.mentor_id = m.id
-      JOIN users u ON m.user_id = u.id
-      LEFT JOIN profiles prof ON u.id = prof.user_id
-      JOIN universities univ ON prof.university_id = univ.id
-      WHERE 
-        l.meeting_type = 'perorangan' 
-        AND l.visit_type IN ('lokal', 'luar_kota', 'Luring')
-        AND univ.status = 'active'
-      GROUP BY m.id, u.username, prof.avatar_url
-      ORDER BY visit_count DESC
-      LIMIT 10
-    `;
+    // Fetch logbooks and mentors
+    const logbooks = await prisma.logbooks.findMany({
+      where: {
+        meeting_type: 'perorangan',
+        visit_type: { in: ['lokal', 'luar_kota', 'Luring'] },
+        mentors: {
+          users: {
+            profiles: {
+              universities: activeUnivFilter
+            }
+          }
+        }
+      },
+      include: {
+        mentors: {
+          include: {
+            users: { include: { profiles: true } }
+          }
+        }
+      }
+    });
+
+    const mentorVisitMap = new Map<string, { name: string; foto: string | null; count: number }>();
+    logbooks.forEach(l => {
+      if (l.mentors) {
+        const m = l.mentors;
+        const current = mentorVisitMap.get(m.id) || { name: m.users?.email || "Unknown", foto: m.users?.profiles?.avatar_url || null, count: 0 };
+        current.count++;
+        mentorVisitMap.set(m.id, current);
+      }
+    });
+
+    const topMentorsVisits = Array.from(mentorVisitMap.values())
+      .map(m => ({ name: m.name, foto: m.foto, visit_count: m.count }))
+      .sort((a, b) => b.visit_count - a.visit_count)
+      .slice(0, 10);
 
     // 6. Summary Omzet Rate (Global Average)
-    // Reuse the CTE logic from #3 but avg
-    const summaryOmzetRaw: any[] = await prisma.$queryRaw`
-      WITH RankedReports AS (
-        SELECT 
-          mr.participant_id,
-          mr.revenue,
-          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year ASC, mr.report_month ASC) as rn_asc,
-          ROW_NUMBER() OVER (PARTITION BY mr.participant_id ORDER BY mr.report_year DESC, mr.report_month DESC) as rn_desc
-        FROM monthly_reports mr
-        WHERE mr.revenue IS NOT NULL
-      ),
-      ParticipantGrowth AS (
-        SELECT 
-          CASE 
-            WHEN r1.revenue = 0 THEN 0 
-            ELSE ((r2.revenue - r1.revenue) / r1.revenue) * 100 
-          END as growth
-        FROM RankedReports r1
-        JOIN RankedReports r2 ON r1.participant_id = r2.participant_id
-        JOIN participants p ON r1.participant_id = p.id
-        JOIN universities u ON p.university_id = u.id
-        WHERE r1.rn_asc = 1 AND r2.rn_desc = 1 AND u.status = 'active'
-      )
-      SELECT AVG(growth) as avg_growth FROM ParticipantGrowth
-    `;
-    const summaryOmzetGrowth = Number(summaryOmzetRaw[0]?.avg_growth || 0);
+    const allGrowth = activeData.map(p => {
+      const reports = p.monthly_reports || [];
+      const first = reports[0];
+      const last = reports[reports.length - 1];
+      if (first && last && Number(first.revenue) > 0) {
+        return ((Number(last.revenue) - Number(first.revenue)) / Number(first.revenue)) * 100;
+      }
+      return null;
+    }).filter((g): g is number => g !== null);
 
-    // Serialization & Safety
-    const safeMapDistribution = regencyDistributionRaw.map((m: any) => ({
-        name: m.name,
-        value: Number(m.value),
-        lat: m.lat ? Number(m.lat) : null,
-        lng: m.lng ? Number(m.lng) : null
-    }));
-
-    const safeTopOmzetParticipants: any[] = (topOmzetParticipants as any[]).map((p: any) => ({
-      ...p,
-      growth: Number(p.growth),
-      last_revenue: Number(p.last_revenue)
-    }));
-
-    const safeTopMentorsVisits: any[] = (topMentorsVisits as any[]).map((m: any) => ({
-      ...m,
-      visit_count: Number(m.visit_count)
-    }));
+    const totalGrowth = allGrowth.reduce((acc, g) => acc + g, 0);
+    const summaryOmzetGrowth = allGrowth.length > 0 ? totalGrowth / allGrowth.length : 0;
 
     return NextResponse.json(serializeBigInt({
       counts: {
@@ -265,10 +246,10 @@ export async function GET() {
         newEmployees: newEmployeesCount,
         avgOmzetGrowth: summaryOmzetGrowth
       },
-      mapDistribution: safeMapDistribution,
-      topOmzetParticipants: safeTopOmzetParticipants,
+      mapDistribution: regencyDistribution,
+      topOmzetParticipants: participantsWithGrowth,
       universityStats: universityStats,
-      topMentorsVisits: safeTopMentorsVisits,
+      topMentorsVisits: topMentorsVisits,
       updatedAt: new Date().toISOString(),
     }));
   } catch (error) {

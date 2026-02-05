@@ -45,7 +45,7 @@ export async function GET(
         const profile = participant.profiles;
         const user = profile?.users;
         const business = participant.businesses[0] || null;
-        
+
         // Address filtering
         const addresses = profile?.addresses || [];
         const ktpAddress = addresses.find(a => a.label?.toLowerCase().includes('ktp')) || addresses[0];
@@ -56,9 +56,9 @@ export async function GET(
             participant: {
                 // Basic Info
                 id_tkm: participant.legacy_tkm_id,
-                nama: profile?.full_name || user?.username || "Unknown",
+                nama: profile?.full_name || user?.email || "Unknown",
                 nik: profile?.id_number,
-                status: participant.status,
+                status: participant.state,
                 no_whatsapp: profile?.whatsapp_number,
 
                 // Personal Data
@@ -108,7 +108,7 @@ export async function GET(
                 lokasi_usaha: null, // addr?
                 kepemilikan_lokasi_usaha: business?.location_ownership,
                 alamat_usaha_dan_alamat_domisili_sama: null,
-                alamat_usaha: null, 
+                alamat_usaha: null,
                 provinsi_usaha: null,
                 kota_usaha: null,
                 kecamatan_usaha: null,
@@ -150,7 +150,7 @@ export async function GET(
                     presenceStatus: participant.presence_status,
                     willingToBeAssisted: participant.willing_to_be_assisted,
                     reasonNotWilling: participant.reason_not_willing,
-                    statusApplicant: participant.status_applicant,
+                    statusApplicant: participant.status,
                     reasonDrop: participant.reason_drop,
                     no_wa: profile?.whatsapp_number,
                     link_map: null,
@@ -166,7 +166,7 @@ export async function GET(
         };
 
         // Helper to serialize BigInt if needed (though we used Number() mostly)
-        return NextResponse.json(JSON.parse(JSON.stringify(response, (key, value) => 
+        return NextResponse.json(JSON.parse(JSON.stringify(response, (key, value) =>
             typeof value === 'bigint' ? value.toString() : value
         )));
 

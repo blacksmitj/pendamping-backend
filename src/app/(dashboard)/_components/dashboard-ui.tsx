@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function formatDate(value?: string | null) {
   if (!value) return "Not set";
@@ -159,27 +160,61 @@ export function PaginationControls({
   onPageChange: (nextPage: number) => void;
   isLoading: boolean;
 }) {
+  const canGoBack = page > 1;
+  const canGoForward = page < totalPages;
+
   return (
-    <div className="flex flex-col items-center justify-between gap-3 pt-4 sm:flex-row">
-      <p className="text-sm text-muted-foreground">
-        Page {page} of {totalPages}
-      </p>
+    <div className="flex flex-col items-center justify-between gap-4 pt-6 border-t border-border mt-6 sm:flex-row">
       <div className="flex items-center gap-2">
+        <p className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50">
+          Halaman <span className="text-foreground font-bold">{page}</span> dari <span className="text-foreground font-bold">{totalPages}</span>
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={() => onPageChange(page - 1)}
-          disabled={isLoading || page <= 1}
+          disabled={isLoading || !canGoBack}
+          className="h-10 gap-2 px-4 border-border/60 bg-card hover:bg-muted font-semibold transition-all active:scale-95"
         >
-          Previous
+          <ChevronLeft className="h-4 w-4" />
+          Sebelumnya
         </Button>
+        <div className="flex items-center gap-1.5 px-2">
+          {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+            // Simplified page number logic
+            const pageNum = totalPages <= 5 ? i + 1 : (
+              page <= 3 ? i + 1 : (
+                page >= totalPages - 2 ? totalPages - 4 + i : page - 2 + i
+              )
+            );
+
+            if (pageNum <= 0 || pageNum > totalPages) return null;
+
+            return (
+              <Button
+                key={pageNum}
+                variant={page === pageNum ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onPageChange(pageNum)}
+                className={`h-9 w-9 p-0 font-bold transition-all ${page === pageNum ? "shadow-md shadow-primary/20 scale-105" : "text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => onPageChange(page + 1)}
-          disabled={isLoading || page >= totalPages}
+          disabled={isLoading || !canGoForward}
+          className="h-10 gap-2 px-4 border-border/60 bg-card hover:bg-muted font-semibold transition-all active:scale-95"
         >
-          Next
+          Selanjutnya
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

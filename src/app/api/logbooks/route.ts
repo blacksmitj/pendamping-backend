@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma, Prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
     const sortFieldMap: Record<string, string> = {
       verified: 'is_verified',
       pendamping: 'mentor_id',
-      id_tkm: 'participant_id',
+      // id_tkm: 'participant_id', // Removed: participant_id does not exist on logbooks
       logbookDate: 'activity_date',
       updated_at: 'updated_at'
     };
@@ -42,43 +43,51 @@ export async function GET(request: Request) {
 
     // Search Logic with UUIDs
     // Since we can't easily search UUIDs by string like integers, we rely on searching names via relations
-    
+
     // Build Where Input
     const where: Prisma.logbooksWhereInput = {};
 
     if (search) {
-        where.OR = [
-            // Search text fields
-            { activity_summary: { contains: search, mode: 'insensitive' } },
-            { mentoring_material: { contains: search, mode: 'insensitive' } },
-            { obstacles: { contains: search, mode: 'insensitive' } },
-            { solutions: { contains: search, mode: 'insensitive' } },
-            // Search relations
-            { participants: { 
+      where.OR = [
+        // Search text fields
+        { activity_summary: { contains: search, mode: 'insensitive' } },
+        { mentoring_material: { contains: search, mode: 'insensitive' } },
+        { obstacles: { contains: search, mode: 'insensitive' } },
+        { solutions: { contains: search, mode: 'insensitive' } },
+        // Search relations
+        {
+          logbook_attendees: {
+            some: {
+              participants: {
                 profiles: {
-                    users: {
-                        username: { contains: search, mode: 'insensitive' }
-                    }
+                  users: {
+                    email: { contains: search, mode: 'insensitive' }
+                  }
                 }
-            } },
-            { mentors: {
-                users: {
-                    username: { contains: search, mode: 'insensitive' }
-                }
-            } }
-        ];
+              }
+            }
+          }
+        },
+        {
+          mentors: {
+            users: {
+              email: { contains: search, mode: 'insensitive' }
+            }
+          }
+        }
+      ];
     }
 
     if (filterVerified) {
-        where.is_verified = filterVerified;
+      where.is_verified = filterVerified;
     }
     if (filterDate && !Number.isNaN(Date.parse(filterDate))) {
-        const startDate = new Date(filterDate);
-        const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
-        where.activity_date = {
-            gte: startDate,
-            lt: endDate
-        };
+      const startDate = new Date(filterDate);
+      const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      where.activity_date = {
+        gte: startDate,
+        lt: endDate
+      };
     }
 
     const logbooks = await prisma.logbooks.findMany({
@@ -87,42 +96,57 @@ export async function GET(request: Request) {
       orderBy,
       where,
       include: {
-          participants: {
+        logbook_attendees: {
+          include: {
+            participants: {
               include: {
-                  profiles: {
-                      include: {
-                          users: true
-                      }
+                profiles: {
+                  include: {
+                    users: true
                   }
+                }
               }
-          },
-          mentors: {
-              include: {
-                  users: {
-                      include: {
-                          profiles: true
-                      }
-                  }
-              }
+            }
           }
+        },
+        mentors: {
+          include: {
+            users: {
+              include: {
+                profiles: true
+              }
+            }
+          }
+        }
       }
     });
-    
+
     const total = await prisma.logbooks.count({ where });
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-    const data = logbooks.map((item) => {
-      const participantUser = item.participants?.profiles?.users;
+    const data = logbooks.map((item: any) => {
+      const attendees = item.logbook_attendees || [];
+      const firstAttendee = attendees[0];
+      const participant = firstAttendee?.participants;
+      const participantUser = participant?.profiles?.users;
+
       const mentorUser = item.mentors?.users;
       const mentorProfile = (mentorUser as any)?.profiles;
-      
+
+      const isGroup = (item.meeting_type || "").toLowerCase().includes("kelompok") || attendees.length > 1;
+
+      let displayTkmName = participant?.profiles?.full_name || participantUser?.email || "Unknown";
+      if (isGroup && attendees.length > 1) {
+        displayTkmName = `Kelompok (${attendees.length} Peserta)`;
+      }
+
       // Attempt to map back to legacy-ish structure if frontend relies on it
       return {
         id: item.id,
-        id_pendamping: item.mentor_id, 
-        id_tkm: item.participants?.legacy_tkm_id, 
-        participant_id: item.participant_id, 
-        
+        id_pendamping: item.mentor_id,
+        id_tkm: participant?.legacy_tkm_id,
+        participant_id: firstAttendee?.participant_id,
+
         activitySummary: item.activity_summary || "",
         deliveryMethod: item.delivery_method || "",
         visitType: item.visit_type || "",
@@ -136,16 +160,19 @@ export async function GET(request: Request) {
         totalExpense: Number(item.expense_amount || 0),
         verified: item.is_verified,
         no_expense_reason: item.no_expense_reason || "",
-        
+
         created_at: item.created_at,
         updated_at: item.updated_at,
-        
+
         // Extra info
-        pendampingName: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+        pendampingName: mentorProfile?.full_name || mentorUser?.email || "Unknown",
         pendampingPhoto: mentorProfile?.avatar_url || null,
-        tkmName: item.participants?.profiles?.full_name || participantUser?.username || "Unknown",
-        tkmPhoto: item.participants?.profiles?.avatar_url || null,
+        tkmName: displayTkmName,
+        tkmPhoto: participant?.profiles?.avatar_url || null,
         pendampingUniversity: "",
+        isGroup,
+        attendeeCount: attendees.length,
+        attendees: attendees.map((a: any) => a.participants?.profiles?.full_name || "Unknown").filter(Boolean),
       };
     });
 

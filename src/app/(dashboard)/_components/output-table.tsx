@@ -109,7 +109,11 @@ export function OutputTable({
               </TableRow>
             ) : (
               entries.map((entry) => (
-                <TableRow key={`${entry.id}-${entry.id_tkm}`}>
+                <TableRow
+                  key={`${entry.id}-${entry.id_tkm}`}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => window.location.href = `/outputs/${entry.id}`}
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 border border-border/50">

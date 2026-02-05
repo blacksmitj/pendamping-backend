@@ -16,7 +16,7 @@ export async function GET(
         });
 
         if (!participant) {
-             return NextResponse.json(
+            return NextResponse.json(
                 { error: "Participant not found" },
                 { status: 404 }
             );
@@ -41,13 +41,15 @@ export async function GET(
 
         // Build where clause
         const where: any = {
-            participant_id: participant.id,
+            logbook_attendees: {
+                some: {
+                    participant_id: participant.id
+                }
+            }
         };
 
         if (month) {
-            // New schema doesn't have month_report directly on logbooks?
-            // Actually it doesn't seem to. It has activity_date. We might filter by date range if needed.
-            // Or assume month param is just ignored for now or implement month extraction filter.
+            // ...
         }
 
         if (verified) {
@@ -61,6 +63,15 @@ export async function GET(
         const logbooks = await prisma.logbooks.findMany({
             where,
             include: {
+                logbook_attendees: {
+                    include: {
+                        participants: {
+                            include: {
+                                profiles: true
+                            }
+                        }
+                    }
+                },
                 mentors: {
                     include: {
                         users: {
@@ -82,7 +93,15 @@ export async function GET(
         const data = logbooks.map((logbook) => {
             const mentorUser = logbook.mentors?.users;
             const mentorProfile = (mentorUser as any)?.profiles;
-            
+            const attendees = logbook.logbook_attendees || [];
+
+            const isGroup = (logbook.meeting_type || "").toLowerCase().includes("kelompok") || attendees.length > 1;
+
+            let displayTkmName = participant.profiles?.full_name || "Participant";
+            if (isGroup && attendees.length > 1) {
+                displayTkmName = `Kelompok (${attendees.length} Peserta)`;
+            }
+
             return {
                 id: logbook.id,
                 id_tkm: participant.legacy_tkm_id,
@@ -101,24 +120,26 @@ export async function GET(
                 reasonNoExpense: logbook.no_expense_reason || "",
                 verified: logbook.is_verified,
                 note_verified: logbook.verification_note,
-                month_report: 0, 
+                month_report: 0,
                 groupID: null,
-                documentationFiles: [], 
+                documentationFiles: [],
                 expenseProofFile: null,
                 pendamping: logbook.mentors
                     ? {
                         id: logbook.mentors.id,
-                        name: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+                        name: mentorProfile?.full_name || mentorUser?.email || "Unknown",
                         email: mentorUser?.email,
                         photo: mentorProfile?.avatar_url || null,
                     }
                     : null,
-                pendampingName: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+                pendampingName: mentorProfile?.full_name || mentorUser?.email || "Unknown",
                 pendampingPhoto: mentorProfile?.avatar_url || null,
                 pendampingUniversity: "",
-                tkmName: participant.profiles?.full_name || "Participant",
+                tkmName: displayTkmName,
                 created_at: logbook.created_at,
                 updated_at: logbook.updated_at,
+                isGroup,
+                attendeeCount: attendees.length,
             };
         });
 

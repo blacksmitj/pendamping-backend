@@ -5,13 +5,22 @@ import ExcelJS from "exceljs";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+
+        // Filters
+        const status = searchParams.get("status"); // active, drop, pending (comma separated)
+        // verified here could mean LPJ status or is_verified in monthly reports
+        const verified = searchParams.get("verified"); // approved, rejected, pending (comma separated)
+        const universityStatus = searchParams.get("university_status"); // active, inactive
+        const columnsParam = searchParams.get("columns"); // comma separated keys
+
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Output");
 
-        // Define Columns (Same as before for consistency)
-        worksheet.columns = [
+        // Define All Possible Columns
+        const staticColumns = [
             { header: "ID TKM", key: "id_tkm", width: 15 },
             { header: "Nama", key: "nama", width: 25 },
             { header: "NIK", key: "nik", width: 20 },
@@ -30,118 +39,131 @@ export async function GET() {
             { header: "Universitas", key: "universitas", width: 25 },
             { header: "NIK Pendamping", key: "nik_pendamping", width: 20 },
             { header: "NO WA Pendamping", key: "no_wa_pendamping", width: 20 },
-
-            // Month 0 (Placeholder or actual month if mapped)
-            ...[0, 1, 2, 3].map(m => ([
-                { header: `Omzet Bulan ${m}`, key: `omzet_m${m}`, width: 20 },
-                { header: `Kapasitas Produksi Bulan ${m}`, key: `prod_m${m}`, width: 30 },
-                { header: `Volume Penjualan Bulan ${m}`, key: `sales_m${m}`, width: 30 },
-                { header: `Area Pemasaran Bulan ${m}`, key: `area_m${m}`, width: 25 },
-                { header: `Penerapan Buku Kas Bulan ${m}`, key: `buku_m${m}`, width: 20 },
-                { header: `Bukti Buku Kas Bulan ${m}`, key: `bukti_buku_m${m}`, width: 25 },
-                { header: `Penerapan Laba Rugi Bulan ${m}`, key: `lr_m${m}`, width: 20 },
-                { header: `Bukti Laba Rugi Bulan ${m}`, key: `bukti_lr_m${m}`, width: 25 },
-                { header: `Verifikasi ${m}`, key: `ver_m${m}`, width: 15 },
-                { header: `Tenaga Kerja Baru (Bulan ${m})`, key: `tk_m${m}`, width: 20 },
-            ])).flat()
+            { header: "Bersedia Didampingi", key: "bersedia_didampingi", width: 25 },
+            { header: "Dapat Ditemukan", key: "kehadiran", width: 20 },
+            { header: "State", key: "state_peserta", width: 15 },
+            { header: "Status", key: "status_peserta", width: 15 },
+            { header: "Alasan Drop", key: "alasan_drop", width: 30 },
         ];
 
-        // Fetch participants with their businesses and reports
-        const dataRaw: any[] = await prisma.$queryRaw`
-            SELECT 
-                p.id,
-                p.legacy_tkm_id as id_tkm,
-                u.username as nama,
-                prof.id_number as nik,
-                prof.dob as tgl_lahir,
-                b.name as nama_usaha,
-                b.type as jenis_usaha,
-                b.sector as sektor_usaha,
-                addr.address_line as alamat_usaha,
-                v.name as kelurahan_usaha,
-                d.name as kecamatan_usaha,
-                r.name as kota_usaha,
-                prov.name as provinsi_usaha,
-                
-                -- Mentor Info
-                mentor_u.username as pendamping_name,
-                mentor_prof.id_number as pendamping_nik,
-                mentor_prof.whatsapp_number as pendamping_wa
-                
-            FROM participants p
-            LEFT JOIN profiles prof ON p.profile_id = prof.id
-            LEFT JOIN users u ON prof.user_id = u.id
-            LEFT JOIN businesses b ON p.id = b.participant_id
-            LEFT JOIN (
-                SELECT DISTINCT ON (profile_id) * FROM addresses ORDER BY profile_id, created_at DESC
-            ) addr ON prof.id = addr.profile_id
-            LEFT JOIN villages v ON addr.village_id = v.id
-            LEFT JOIN districts d ON addr.district_id = d.id
-            LEFT JOIN regencies r ON addr.regency_id = r.id
-            LEFT JOIN provinces prov ON addr.province_id = prov.id
-            
-            -- Assuming one active mentor per participant for export
-            LEFT JOIN mentor_participants mp ON p.id = mp.participant_id AND mp.assignment_status = 'active'
-            LEFT JOIN mentors m ON mp.mentor_id = m.id
-            LEFT JOIN users mentor_u ON m.user_id = mentor_u.id
-            LEFT JOIN profiles mentor_prof ON mentor_u.id = mentor_prof.user_id
-            
-            WHERE p.status != 'Cadangan' OR p.status IS NULL
-        `;
+        const monthColumns = [0, 1, 2, 3].map(m => ([
+            { header: `Omzet Bulan ${m}`, key: `omzet_m${m}`, width: 20 },
+            { header: `Kapasitas Produksi Bulan ${m}`, key: `prod_m${m}`, width: 30 },
+            { header: `Volume Penjualan Bulan ${m}`, key: `sales_m${m}`, width: 30 },
+            { header: `Area Pemasaran Bulan ${m}`, key: `area_m${m}`, width: 25 },
+            { header: `Penerapan Buku Kas Bulan ${m}`, key: `buku_m${m}`, width: 20 },
+            { header: `Bukti Buku Kas Bulan ${m}`, key: `bukti_buku_m${m}`, width: 25 },
+            { header: `Penerapan Laba Rugi Bulan ${m}`, key: `lr_m${m}`, width: 20 },
+            { header: `Bukti Laba Rugi Bulan ${m}`, key: `bukti_lr_m${m}`, width: 25 },
+            { header: `Verifikasi ${m}`, key: `ver_m${m}`, width: 15 },
+            { header: `Tenaga Kerja Baru (Bulan ${m})`, key: `tk_m${m}`, width: 20 },
+        ])).flat();
 
-        // Fetch monthly reports for all these participants
-        const reportsRaw: any[] = await prisma.$queryRaw`
-            SELECT 
-                mr.participant_id,
-                mr.report_month,
-                mr.report_year,
-                mr.revenue,
-                mr.production_capacity,
-                mr.production_unit,
-                mr.sales_volume,
-                mr.sales_unit,
-                mr.marketing_area,
-                mr.bookkeeping_cashflow,
-                mr.bookkeeping_income_statement,
-                mr.is_verified,
-                CAST((SELECT COUNT(*) FROM business_employees be WHERE be.business_id = b.id) AS INTEGER) as employee_count
-            FROM monthly_reports mr
-            LEFT JOIN businesses b ON mr.participant_id = b.participant_id
-        `;
+        const allColumns = [...staticColumns, ...monthColumns];
 
-        // Helper to group reports. In legacy it was month 0,1,2,3. 
-        // We'll map the reports sequentially or by some logic if available.
-        // For now, let's group by participant and take first 4 reports.
-        const reportsByParticipant = new Map<string, any[]>();
-        for (const report of reportsRaw) {
-            const pid = String(report.participant_id);
-            if (!reportsByParticipant.has(pid)) reportsByParticipant.set(pid, []);
-            reportsByParticipant.get(pid)!.push(report);
+        // Apply column selection
+        if (columnsParam) {
+            const requestedKeys = columnsParam.split(",");
+            worksheet.columns = allColumns.filter(col => requestedKeys.includes(col.key || ""));
+        } else {
+            worksheet.columns = allColumns;
         }
 
-        for (const p of dataRaw) {
-            const pid = String(p.id);
-            const pReports = (reportsByParticipant.get(pid) || [])
-                .sort((a, b) => (a.report_year * 12 + a.report_month) - (b.report_year * 12 + b.report_month));
+        // Build Where Clause
+        const where: any = {};
+        if (status) {
+            where.status = { in: status.split(",") };
+        }
+
+        // University status filter
+        if (universityStatus && universityStatus !== "all") {
+            where.universities = {
+                status: universityStatus
+            };
+        }
+
+        // Fetch participants
+        const participants = await prisma.participants.findMany({
+            where,
+            include: {
+                profiles: {
+                    include: {
+                        users: true,
+                        addresses: {
+                            orderBy: { created_at: 'desc' },
+                            take: 1
+                        }
+                    }
+                },
+                businesses: {
+                    include: {
+                        business_employees: true
+                    }
+                },
+                monthly_reports: {
+                    where: verified ? { is_verified: { in: verified.split(",") } } : undefined,
+                    include: {
+                        monthly_report_documents: {
+                            include: { documents: true }
+                        }
+                    },
+                    orderBy: [
+                        { report_year: 'asc' },
+                        { report_month: 'asc' }
+                    ]
+                },
+                mentor_participants: {
+                    where: { assignment_status: 'active' },
+                    include: {
+                        mentors: {
+                            include: {
+                                users: {
+                                    include: { profiles: true }
+                                }
+                            }
+                        }
+                    },
+                    take: 1
+                },
+                universities: true
+            }
+        });
+
+        for (const p of participants) {
+            const profile = p.profiles;
+            const user = profile?.users;
+            const business = p.businesses?.[0];
+            const address = profile?.addresses?.[0];
+            const mentorAssignment = p.mentor_participants?.[0];
+            const mentor = mentorAssignment?.mentors;
+            const mentorUser = mentor?.users;
+            const mentorProfile = mentorUser?.profiles;
+
+            const pReports = p.monthly_reports || [];
 
             const row: any = {
-                id_tkm: p.id_tkm,
-                nama: p.nama || "Unknown",
-                nik: p.nik || "",
-                tgl_lahir: p.tgl_lahir ? new Date(p.tgl_lahir).toISOString().split('T')[0] : "",
-                umur: p.tgl_lahir ? (new Date().getFullYear() - new Date(p.tgl_lahir).getFullYear()) : "",
-                nama_usaha: p.nama_usaha || "",
-                jenis_usaha: p.jenis_usaha || "",
-                sektor_usaha: p.sektor_usaha || "",
-                alamat_usaha: p.alamat_usaha || "",
-                kelurahan_usaha: p.kelurahan_usaha || "",
-                kecamatan_usaha: p.kecamatan_usaha || "",
-                kota_usaha: p.kota_usaha || "",
-                provinsi_usaha: p.provinsi_usaha || "",
-                pendamping: p.pendamping_name || "",
-                universitas: "", 
-                nik_pendamping: p.pendamping_nik || "",
-                no_wa_pendamping: p.pendamping_wa || "",
+                id_tkm: p.legacy_tkm_id,
+                nama: profile?.full_name || user?.email || "Unknown",
+                nik: profile?.id_number || "",
+                tgl_lahir: profile?.dob ? new Date(profile.dob).toISOString().split('T')[0] : "",
+                umur: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : "",
+                nama_usaha: business?.name || "",
+                jenis_usaha: business?.type || "",
+                sektor_usaha: business?.sector || "",
+                alamat_usaha: address?.address_line || "",
+                kelurahan_usaha: address?.village_name || "",
+                kecamatan_usaha: address?.district_name || "",
+                kota_usaha: address?.regency_name || "",
+                provinsi_usaha: address?.province_name || "",
+                pendamping: mentorProfile?.full_name || mentorUser?.email || "",
+                universitas: p.universities?.name || "",
+                nik_pendamping: mentorProfile?.id_number || "",
+                no_wa_pendamping: mentorProfile?.whatsapp_number || "",
+                bersedia_didampingi: p.willing_to_be_assisted || "",
+                kehadiran: p.presence_status || "",
+                status_peserta: p.status || "",
+                state_peserta: p.state || "",
+                alasan_drop: p.reason_drop || "",
             };
 
             // Map up to 4 reports (m0 to m3)
@@ -149,23 +171,40 @@ export async function GET() {
                 const report = pReports[i];
                 const key = `_m${i}`;
                 if (report) {
+                    // Extract document URLs for buku kas and laba rugi
+                    const docs = (report as any).monthly_report_documents || [];
+                    let buktiBukuKas = "";
+                    let buktiLabaRugi = "";
+
+                    for (const doc of docs) {
+                        const label = (doc.documents?.label || "").toLowerCase();
+                        const url = doc.documents?.file_url || "";
+                        if (label.includes("kas") || label.includes("cashflow") || label.includes("buku kas")) {
+                            buktiBukuKas = url;
+                        } else if (label.includes("laba") || label.includes("rugi") || label.includes("income")) {
+                            buktiLabaRugi = url;
+                        }
+                    }
+
                     row[`omzet${key}`] = Number(report.revenue || 0);
                     row[`prod${key}`] = `${report.production_capacity || 0} ${report.production_unit || ''}`.trim();
                     row[`sales${key}`] = `${report.sales_volume || 0} ${report.sales_unit || ''}`.trim();
                     row[`area${key}`] = report.marketing_area || "";
                     row[`buku${key}`] = report.bookkeeping_cashflow ? "Ya" : "Tidak";
-                    row[`bukti_buku${key}`] = ""; // Files complex to join here
+                    row[`bukti_buku${key}`] = buktiBukuKas;
                     row[`lr${key}`] = report.bookkeeping_income_statement ? "Ya" : "Tidak";
-                    row[`bukti_lr${key}`] = "";
+                    row[`bukti_lr${key}`] = buktiLabaRugi;
                     row[`ver${key}`] = report.is_verified || "pending";
-                    row[`tk${key}`] = report.employee_count || 0;
+                    row[`tk${key}`] = business?.business_employees?.length || 0;
                 } else {
                     row[`omzet${key}`] = "";
                     row[`prod${key}`] = "";
                     row[`sales${key}`] = "";
                     row[`area${key}`] = "";
                     row[`buku${key}`] = "";
+                    row[`bukti_buku${key}`] = "";
                     row[`lr${key}`] = "";
+                    row[`bukti_lr${key}`] = "";
                     row[`ver${key}`] = "";
                     row[`tk${key}`] = "";
                 }
@@ -173,11 +212,23 @@ export async function GET() {
             worksheet.addRow(row);
         }
 
+        const fileName = `OutputDetail_${new Date().getTime()}.xlsx`;
         const buffer = await workbook.xlsx.writeBuffer();
+
+        // Log the export
+        await prisma.export_logs.create({
+            data: {
+                filename: fileName,
+                type: "output",
+                filters: { status, verified, columns: columnsParam },
+                status: "completed"
+            }
+        });
+
         return new Response(buffer, {
             status: 200,
             headers: {
-                'Content-Disposition': 'attachment; filename="Output.xlsx"',
+                'Content-Disposition': `attachment; filename="${fileName}"`,
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             },
         });

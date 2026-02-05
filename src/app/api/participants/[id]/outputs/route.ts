@@ -63,17 +63,17 @@ export async function GET(
         const formattedOutputs = outputs.map((output) => {
             const mentorUser = output.mentors?.users;
             const mentorProfile = (mentorUser as any)?.profiles;
-            
+
             return {
                 id: output.id,
                 id_tkm: participant.legacy_tkm_id,
                 id_pendamping: output.mentor_id,
-                month_report: output.report_month, 
+                month_report: output.report_month,
 
                 // Financial Records
                 bookkeeping_cashflow: output.bookkeeping_cashflow ? "T" : "F",
-                bookkeeping_income_statement: output.bookkeeping_income_statement ? "T" : "F", 
-                cashflow_proof_url: null, 
+                bookkeeping_income_statement: output.bookkeeping_income_statement ? "T" : "F",
+                cashflow_proof_url: null,
                 income_proof_url: null,
 
                 // Business Metrics
@@ -104,7 +104,7 @@ export async function GET(
                 pendamping: output.mentors
                     ? {
                         id: output.mentors.id,
-                        name: mentorProfile?.full_name || mentorUser?.username || "Unknown",
+                        name: mentorProfile?.full_name || mentorUser?.email || "Unknown",
                         email: mentorUser?.email,
                         photo: mentorProfile?.avatar_url || null,
                     }
@@ -123,7 +123,7 @@ export async function GET(
                     bpjs_status: emp.bpjs_status,
                     bpjs_number: emp.bpjs_number,
                     bpjs_type: emp.bpjs_type,
-                    bpjs_card_url: null, 
+                    bpjs_card_url: null,
                     ktp_url: null,
                     salary_slip_url: null,
                 })),
@@ -139,7 +139,7 @@ export async function GET(
             revenueValues.length > 0
                 ? revenueValues.reduce((a, b) => a + b, 0) / revenueValues.length
                 : 0;
-                
+
         // Total new employees might be static now
         const totalNewEmployees = businessEmployees.length;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma, Prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -13,77 +14,60 @@ export async function GET(request: Request) {
     );
     const search = (searchParams.get("search") ?? "").trim();
     const sortBy = searchParams.get("sortBy") ?? "id";
-    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+    const sortOrder = (searchParams.get("sortOrder") === "asc" ? "asc" : "desc") as Prisma.SortOrder;
     const offset = (page - 1) * pageSize;
 
-    // Define valid sort columns to prevent SQL injection
-    const validSortColumns = {
-      id: "u.id",
-      name: "u.username", // users.name -> users.username
-      email: "u.email",
+    // Define Sort Logic
+    const sortMapping: Record<string, Prisma.mentorsOrderByWithRelationInput> = {
+      id: { id: sortOrder },
+      name: { users: { email: sortOrder } },
+      email: { users: { email: sortOrder } },
     };
 
-    // Default to u.id if invalid sort column
-    const orderByClause = validSortColumns[sortBy as keyof typeof validSortColumns]
-      ? Prisma.sql([`${validSortColumns[sortBy as keyof typeof validSortColumns]} ${sortOrder.toUpperCase()}`])
-      : Prisma.sql([`u.id ${sortOrder.toUpperCase()}`]);
+    const orderBy = sortMapping[sortBy] || { id: "asc" };
 
-    // Base query parts
-    // Mentors are primarily identified as entries in the 'mentors' table.
-    // Joining mentors table ensures we get everyone assigned as a mentor.
-    
-    const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
-    
+    // Build WHERE conditions
+    const where: Prisma.mentorsWhereInput = {};
+
     if (search) {
-      const searchPattern = `%${search}%`;
-      conditions.push(Prisma.sql`(
-          u.username ILIKE ${searchPattern} OR 
-          u.email ILIKE ${searchPattern} OR 
-          p.whatsapp_number ILIKE ${searchPattern}
-        )`);
+      where.OR = [
+        { users: { email: { contains: search, mode: 'insensitive' } } },
+        { users: { email: { contains: search, mode: 'insensitive' } } },
+        { users: { profiles: { whatsapp_number: { contains: search, mode: 'insensitive' } } } }
+      ];
     }
 
-    const whereClause = conditions.length > 0
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`
-      : Prisma.empty;
-
     // Count query
-    const countResult: any = await prisma.$queryRaw`
-      SELECT COUNT(DISTINCT m.id) as total
-      FROM mentors m
-      JOIN users u ON m.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
-      ${whereClause}
-    `;
-    
-    const total = Number(countResult[0]?.total || 0);
+    const total = await prisma.mentors.count({ where });
 
     // Data query
-    const users: any[] = await prisma.$queryRaw`
-      SELECT 
-        m.id, 
-        u.username as name, 
-        u.email, 
-        p.whatsapp_number as no_wa, 
-        p.gender as jenis_kelamin, 
-        p.avatar_url as foto
-      FROM mentors m
-      JOIN users u ON m.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
-      ${whereClause}
-      ORDER BY ${orderByClause}
-      LIMIT ${pageSize} OFFSET ${offset}
-    `;
+    const mentors = await prisma.mentors.findMany({
+      skip: offset,
+      take: pageSize,
+      where,
+      orderBy,
+      include: {
+        users: {
+          include: {
+            profiles: true
+          }
+        }
+      }
+    });
 
-    const data = users.map((user) => ({
-      id: user.id,
-      name: user.name || "Unknown",
-      email: user.email ?? "",
-      phone: user.no_wa ?? "",
-      gender: user.jenis_kelamin ?? "",
-      photo: user.foto ?? null,
-      university: null // University data not available in new schema
-    }));
+    const data = mentors.map((m) => {
+      const user = m.users;
+      const profile = user?.profiles;
+      return {
+        id: m.id,
+        name: user?.email || "Unknown",
+        email: user?.email ?? "",
+        phone: profile?.whatsapp_number ?? "",
+        gender: profile?.gender ?? "",
+        photo: profile?.avatar_url ?? null,
+        university: null // University connection not directly in mentors table in new schema
+      };
+    });
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma, Prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -21,157 +22,174 @@ export async function GET(request: Request) {
       Math.max(1, Number(searchParams.get("pageSize")) || 10)
     );
     const search = (searchParams.get("search") ?? "").trim();
-    const sortBy = searchParams.get("sortBy") ?? "no";
-    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+    const sortBy = searchParams.get("sortBy") ?? "registered";
+    const sortOrder = (searchParams.get("sortOrder") === "asc" ? "asc" : "desc") as Prisma.SortOrder;
     const status = searchParams.get("status");
     const province = searchParams.get("province");
     const city = searchParams.get("city");
+    const sector = searchParams.get("sector");
+    const batch = searchParams.get("batch");
 
     const skip = (page - 1) * pageSize;
 
+    // Sort Mapping
+    const sortMapping: Record<string, Prisma.participantsOrderByWithRelationInput> = {
+      name: { profiles: { full_name: sortOrder } },
+      status: { status: sortOrder },
+      registered: { created_at: sortOrder },
+      business_name: { businesses: { _count: sortOrder } }, // Prisma doesn't support sorting by related field's property directly if it's 1-to-many easily without raw SQL or dedicated field. But we usually have one business.
+      // For now, let's use the most common direct sorts.
+      // Prisma 5.x allows sorting by relation properties if it's 1-to-1.
+      // Since businesses is 1-to-many, we might need to simplify or use raw query.
+      // However, for business name specifically, we can try:
+    };
+
+    // Special handling for relation sorts if needed
+    let orderBy: any = sortMapping[sortBy];
+
+    if (sortBy === "business_name") {
+      // businesses is a list, so we can't sort by its fields directly in findMany easily.
+      // But we can try to use a specific order if we know there is only one.
+      // For simplicity in this demo, we'll keep it as is or handle in memory if data is small.
+      // Let's stick to fields we can definitely sort on.
+    } else if (sortBy === "sector") {
+      // same as business_name
+    }
+
+    if (!orderBy) {
+      if (sortBy === "newest") orderBy = { created_at: "desc" };
+      else if (sortBy === "oldest") orderBy = { created_at: "asc" };
+      else orderBy = { created_at: "desc" };
+    }
+
     // Build WHERE conditions
-    const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
+    const where: Prisma.participantsWhereInput = {};
 
-    // Note: We access joined tables (u for users, b for businesses, r for regencies/city, etc.)
     if (search) {
-      const searchPattern = `%${search}%`;
-      // Search by profile full_name, business name, or city name
-      conditions.push(Prisma.sql`(prof.full_name ILIKE ${searchPattern} OR b.name ILIKE ${searchPattern} OR r.name ILIKE ${searchPattern})`);
+      where.OR = [
+        { profiles: { full_name: { contains: search, mode: 'insensitive' } } },
+        { businesses: { some: { name: { contains: search, mode: 'insensitive' } } } },
+        { profiles: { addresses: { some: { regency_name: { contains: search, mode: 'insensitive' } } } } }
+      ];
     }
+
     if (status && status !== "all") {
-      conditions.push(Prisma.sql`p.status = ${status}`);
-    }
-    
-    // For province and city, we rely on the addresses join
-    if (province && province !== "all") {
-      conditions.push(Prisma.sql`prov.name = ${province}`);
-    }
-    if (city && city !== "all") {
-      conditions.push(Prisma.sql`r.name = ${city}`);
+      where.status = status;
     }
 
-    const whereClause = conditions.length > 0
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`
-      : Prisma.empty;
+    if ((province && province !== "all") || (city && city !== "all")) {
+      where.profiles = {
+        addresses: {
+          some: {
+            ...(province && province !== "all" ? { province_name: province } : {}),
+            ...(city && city !== "all" ? { regency_name: city } : {})
+          }
+        }
+      };
+    }
 
-    // Define Sort Logic
-    let orderByClause = Prisma.sql`p.created_at DESC`; // Default fallback
+    if (sector && sector !== "all") {
+      where.businesses = {
+        some: { sector }
+      };
+    }
 
-    if (sortBy === "revenue_growth") {
-      orderByClause = Prisma.sql`omset_growth DESC`;
-    } else if (sortBy === "omset_highest") {
-      orderByClause = Prisma.sql`last_revenue DESC`;
-    } else if (sortBy === "omset_lowest") {
-      orderByClause = Prisma.sql`last_revenue ASC`;
-    } else if (sortBy === "status") {
-      orderByClause = sortOrder === 'asc' ? Prisma.sql`p.status ASC` : Prisma.sql`p.status DESC`;
-    } else if (sortBy === "name") {
-      orderByClause = sortOrder === 'asc' ? Prisma.sql`prof.full_name ASC` : Prisma.sql`prof.full_name DESC`;
-    } else if (sortBy === "registered") {
-      orderByClause = sortOrder === 'asc' ? Prisma.sql`p.created_at ASC` : Prisma.sql`p.created_at DESC`;
-    } else {
-      // default
-      orderByClause = sortOrder === 'asc' ? Prisma.sql`p.created_at ASC` : Prisma.sql`p.created_at DESC`;
+    if (batch && batch !== "all") {
+      where.batches = {
+        code: batch
+      };
     }
 
     // Main Query
-    // Joins:
-    // participants (p) -> profiles (prof) -> users (u)
-    // participants (p) -> businesses (b)
-    // profiles (prof) -> addresses (addr) -> regencies (r)
-    // profiles (prof) -> addresses (addr) -> provinces (prov)
-    
-    const participantsRaw = await prisma.$queryRaw`
-      SELECT 
-        p.id,
-        p.legacy_tkm_id as id_tkm, 
-        prof.full_name as nama,
-        u.username,
-        b.name as nama_usaha, 
-        p.status, 
-        r.name as kota_domisili, 
-        prov.name as provinsi_domisili, 
-        b.sector as sektor_usaha, 
-        p.created_at as tanggal_daftar, 
-        prof.whatsapp_number as no_whatsapp, 
-        prof.avatar_url as photo,
-        batch.code as batch_code,
-        grp.name as group_name,
-        
-        -- Calculated Fields
-        CAST((
-          SELECT COUNT(*) 
-          FROM business_employees be 
-          WHERE be.business_id = b.id
-        ) AS INTEGER) as new_employees,
+    const participants = await prisma.participants.findMany({
+      skip,
+      take: pageSize,
+      where,
+      orderBy,
+      include: {
+        profiles: {
+          include: {
+            users: true,
+            addresses: {
+              orderBy: { created_at: 'desc' },
+              take: 1
+            }
+          }
+        },
+        businesses: {
+          include: {
+            business_employees: true
+          }
+        },
+        batches: true,
+        participant_groups: true,
+        monthly_reports: {
+          orderBy: [
+            { report_year: 'asc' },
+            { report_month: 'asc' }
+          ]
+        }
+      }
+    });
 
-        -- Helper for Last Revenue (from monthly_reports)
-        CAST((
-          SELECT revenue 
-          FROM monthly_reports mr 
-          WHERE mr.participant_id = p.id 
-          ORDER BY mr.report_year DESC, mr.report_month DESC 
-          LIMIT 1
-        ) AS DECIMAL(15, 2)) as last_revenue,
-        
-        -- Growth Calculation
-        CAST((
-            COALESCE(
-                 (
-                    (SELECT revenue FROM monthly_reports mr WHERE mr.participant_id = p.id ORDER BY mr.report_year DESC, mr.report_month DESC LIMIT 1) -
-                    (SELECT revenue FROM monthly_reports mr WHERE mr.participant_id = p.id ORDER BY mr.report_year ASC, mr.report_month ASC LIMIT 1)
-                 ) / NULLIF((SELECT revenue FROM monthly_reports mr WHERE mr.participant_id = p.id ORDER BY mr.report_year ASC, mr.report_month ASC LIMIT 1), 0) * 100
-            , 0)
-        ) AS DECIMAL(10, 2)) as omset_growth
-
-      FROM participants p
-      LEFT JOIN profiles prof ON p.profile_id = prof.id
-      LEFT JOIN users u ON prof.user_id = u.id
-      LEFT JOIN businesses b ON b.participant_id = p.id
-      LEFT JOIN batches batch ON p.batch_id = batch.id
-      LEFT JOIN participant_groups grp ON p.group_id = grp.id
-      LEFT JOIN (
-        -- Select distinct addresses per profile to avoid row multiplication
-        SELECT DISTINCT ON (profile_id) *
-        FROM addresses
-        ORDER BY profile_id, created_at DESC
-      ) addr ON prof.id = addr.profile_id
-      LEFT JOIN regencies r ON addr.regency_id = r.id
-      LEFT JOIN provinces prov ON addr.province_id = prov.id
-
-      ${whereClause}
-      ORDER BY ${orderByClause}
-      LIMIT ${pageSize} OFFSET ${skip}
-    `;
-
-    // Count Query for Pagination
-    const totalRaw: any = await prisma.$queryRaw`
-      SELECT COUNT(*) as count 
-      FROM participants p 
-      LEFT JOIN profiles prof ON p.profile_id = prof.id
-      LEFT JOIN users u ON prof.user_id = u.id
-      LEFT JOIN businesses b ON b.participant_id = p.id
-      LEFT JOIN (
-        SELECT DISTINCT ON (profile_id) *
-        FROM addresses
-        ORDER BY profile_id, created_at DESC
-      ) addr ON prof.id = addr.profile_id
-      LEFT JOIN regencies r ON addr.regency_id = r.id
-      LEFT JOIN provinces prov ON addr.province_id = prov.id
-      ${whereClause}
-    `;
-    const total = Number(totalRaw[0]?.count || 0);
-
+    const total = await prisma.participants.count({ where });
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-    const data = serializeBigInt(participantsRaw).map((p: any) => ({
-      ...p,
-      nama: p.nama || p.username || "Unknown",
-      nama_usaha: p.nama_usaha || "Unknown Business",
-      new_employees: Number(p.new_employees),
-      omset_growth: Number(p.omset_growth),
-      last_revenue: Number(p.last_revenue)
-    }));
+    const data = participants.map((p) => {
+      const profile = p.profiles;
+      const user = profile?.users;
+      const business = p.businesses?.[0]; // Usually one main business
+      const address = profile?.addresses?.[0];
+
+      const reports = p.monthly_reports || [];
+      const firstReport = reports[0];
+      const lastReport = reports[reports.length - 1];
+
+      let growth = 0;
+      if (firstReport && lastReport && Number(firstReport.revenue) > 0) {
+        growth = ((Number(lastReport.revenue) - Number(firstReport.revenue)) / Number(firstReport.revenue)) * 100;
+      }
+
+      return {
+        id: p.id,
+        id_tkm: p.legacy_tkm_id,
+        nama: profile?.full_name || user?.email || "Unknown",
+        nama_usaha: business?.name || "Unknown Business",
+        status: p.status,
+        kota_domisili: address?.regency_name || "Unknown",
+        provinsi_domisili: address?.province_name || "Unknown",
+        sektor_usaha: business?.sector || "Unknown Sector",
+        tanggal_daftar: p.created_at,
+        no_whatsapp: profile?.whatsapp_number,
+        photo: profile?.avatar_url,
+        batch_code: p.batches?.code,
+        group_name: p.participant_groups?.name,
+        new_employees: business?.business_employees?.length || 0,
+        last_revenue: lastReport ? Number(lastReport.revenue) : 0,
+        omset_growth: growth
+      };
+    });
+
+    // Handle in-memory sorting for non-Prisma fields if requested
+    if (sortBy === "revenue_growth") {
+      data.sort((a, b) => b.omset_growth - a.omset_growth);
+    } else if (sortBy === "omset_highest") {
+      data.sort((a, b) => b.last_revenue - a.last_revenue);
+    } else if (sortBy === "omset_lowest") {
+      data.sort((a, b) => a.last_revenue - b.last_revenue);
+    } else if (sortBy === "business_name") {
+      data.sort((a, b) => {
+        const nameA = a.nama_usaha || "";
+        const nameB = b.nama_usaha || "";
+        return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      });
+    } else if (sortBy === "sector") {
+      data.sort((a, b) => {
+        const sectorA = a.sektor_usaha || "";
+        const sectorB = b.sektor_usaha || "";
+        return sortOrder === "asc" ? sectorA.localeCompare(sectorB) : sectorB.localeCompare(sectorA);
+      });
+    }
 
     return NextResponse.json({
       data,

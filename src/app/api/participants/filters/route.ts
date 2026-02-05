@@ -12,6 +12,18 @@ export async function GET() {
             orderBy: { status: "asc" },
         });
 
+        const sectors = await prisma.businesses.findMany({
+            select: { sector: true },
+            distinct: ["sector"],
+            where: { sector: { not: null } },
+            orderBy: { sector: "asc" },
+        });
+
+        const batches = await prisma.batches.findMany({
+            select: { code: true },
+            orderBy: { created_at: "desc" },
+        });
+
         // For provinces and cities, we want those that are actually used in addresses
         // Query addresses with distinct provinces
         const usedProvinces = await prisma.addresses.findMany({
@@ -39,7 +51,7 @@ export async function GET() {
             .map(p => p.provinces?.name)
             .filter((n): n is string => !!n)
             .sort();
-            
+
         const cityNames = usedCities
             .map(c => c.regencies?.name)
             .filter((n): n is string => !!n)
@@ -49,6 +61,8 @@ export async function GET() {
             statuses: statuses.map((s) => s.status).filter(Boolean),
             provinces: provinceNames,
             cities: cityNames,
+            sectors: sectors.map((s) => s.sector).filter(Boolean),
+            batches: batches.map((b) => b.code).filter(Boolean),
         });
     } catch (error) {
         console.error("Error fetching filters:", error);

@@ -68,6 +68,7 @@ export default function UniversitiesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
   const [sortOption, setSortOption] = useState(sortOptions[0].value);
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
 
   const activeSort =
     sortOptions.find((option) => option.value === sortOption) ?? sortOptions[0];
@@ -84,6 +85,7 @@ export default function UniversitiesPage() {
     search: universitySearch,
     sortBy: activeSort.sortBy,
     sortOrder: activeSort.sortOrder as "asc" | "desc",
+    status: showActiveOnly ? "active" : undefined,
   });
 
   const universities = useMemo(
@@ -121,9 +123,8 @@ export default function UniversitiesPage() {
           className="gap-2"
         >
           <RefreshCw
-            className={`h-4 w-4 ${
-              universitiesFetching ? "animate-spin text-primary" : ""
-            }`}
+            className={`h-4 w-4 ${universitiesFetching ? "animate-spin text-primary" : ""
+              }`}
           />
           Refresh data
         </Button>
@@ -145,7 +146,23 @@ export default function UniversitiesPage() {
                 setUniversitySearch(event.target.value);
                 setPage(1);
               }}
+              className="w-full sm:w-64"
             />
+            <div className="flex items-center gap-2 px-2">
+              <input
+                type="checkbox"
+                id="active-only"
+                checked={showActiveOnly}
+                onChange={(e) => {
+                  setShowActiveOnly(e.target.checked);
+                  setPage(1);
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="active-only" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                Active Only
+              </label>
+            </div>
             <Select
               value={sortOption}
               onValueChange={(value) => {
@@ -228,11 +245,10 @@ export default function UniversitiesPage() {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          university.status === "active"
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${university.status === "active"
                             ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20"
                             : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                        }`}
+                          }`}
                       >
                         {university.status === "active" ? "Active" : "Inactive"}
                       </span>
@@ -255,8 +271,7 @@ export default function UniversitiesPage() {
                             );
                             if (!res.ok) throw new Error("Failed to update");
                             toast.success(
-                              `University ${
-                                newStatus === "active" ? "activated" : "deactivated"
+                              `University ${newStatus === "active" ? "activated" : "deactivated"
                               } successfully`
                             );
                             refetchUniversities();

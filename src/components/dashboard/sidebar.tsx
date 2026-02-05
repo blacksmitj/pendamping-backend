@@ -9,6 +9,7 @@ import {
     School,
     BookOpen,
     Target,
+    DownloadCloud,
 } from "lucide-react";
 
 const menuItems = [
@@ -18,6 +19,7 @@ const menuItems = [
     { label: "UNIVERSITIES", href: "/universities", icon: School },
     { label: "LOGBOOKS", href: "/logbooks", icon: BookOpen },
     { label: "OUTPUTS", href: "/outputs", icon: Target },
+    { label: "DOWNLOADS", href: "/downloads", icon: DownloadCloud },
 ];
 
 export function Sidebar() {
