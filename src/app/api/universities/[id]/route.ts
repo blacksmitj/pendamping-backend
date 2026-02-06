@@ -1,32 +1,50 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(
+export const dynamic = "force-dynamic";
+
+export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await params;
-        const body = await request.json();
-        const { status } = body;
 
-        if (!status) {
+        const university = await prisma.universities.findUnique({
+            where: { id },
+            include: {
+                _count: {
+                    select: {
+                        profiles: true, // Mentors are here (profiles with university_id)
+                        participants: true
+                    }
+                }
+            }
+        });
+
+        if (!university) {
             return NextResponse.json(
-                { error: "Status is required" },
-                { status: 400 }
+                { error: "University not found" },
+                { status: 404 }
             );
         }
 
-        const updatedUniversity = await prisma.universities.update({
-            where: { id },
-            data: { status },
+        return NextResponse.json({
+            id: university.id,
+            name: university.name,
+            address: university.address,
+            city: university.city,
+            province: university.province,
+            status: university.status,
+            stats: {
+                totalMentors: university._count.profiles,
+                totalParticipants: university._count.participants
+            }
         });
-
-        return NextResponse.json(updatedUniversity);
-    } catch (error) {
-        console.error("[university-id-patch] Error:", error);
+    } catch (error: any) {
+        console.error("[university-detail] Failed to fetch", error);
         return NextResponse.json(
-            { error: "Internal Server Error" },
+            { error: "Failed to fetch university details", details: error.message || String(error) },
             { status: 500 }
         );
     }

@@ -26,10 +26,12 @@ interface LogbookAttendee {
             name: string | null;
             type: string | null;
             sector: string | null;
+            business_employees?: any[];
         }>;
         universities?: {
             name: string;
         } | null;
+        monthly_reports?: any[];
     } | null;
 }
 
@@ -55,8 +57,18 @@ export async function GET(
                                         }
                                     }
                                 },
-                                businesses: { take: 1 },
-                                universities: true
+                                businesses: {
+                                    include: {
+                                        business_employees: true
+                                    }
+                                },
+                                universities: true,
+                                monthly_reports: {
+                                    orderBy: [
+                                        { report_year: 'asc' },
+                                        { report_month: 'asc' }
+                                    ]
+                                }
                             }
                         }
                     }
@@ -99,6 +111,15 @@ export async function GET(
             const business = p?.businesses?.[0];
             const address = profile?.addresses?.[0];
 
+            const reports = p?.monthly_reports || [];
+            const firstReport = reports[0];
+            const lastReport = reports[reports.length - 1];
+
+            let growth = 0;
+            if (firstReport && lastReport && Number(firstReport.revenue) > 0) {
+                growth = ((Number(lastReport.revenue) - Number(firstReport.revenue)) / Number(firstReport.revenue)) * 100;
+            }
+
             return {
                 id: p?.id,
                 legacy_tkm_id: p?.legacy_tkm_id,
@@ -115,6 +136,8 @@ export async function GET(
                 provinsi_usaha: address?.province_name || "",
                 universitas: p?.universities?.name || "",
                 no_whatsapp: profile?.whatsapp_number || "",
+                omsetGrowth: growth,
+                newJobs: business?.business_employees?.length || 0
             };
         });
 

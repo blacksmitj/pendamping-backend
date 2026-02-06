@@ -243,8 +243,8 @@ model monthly_reports {
   legacy_tkm_id                String?                    @db.VarChar(100)
   report_month                 Int
   report_year                  Int
-  bookkeeping_cashflow         Boolean?                   @default(false)
-  bookkeeping_income_statement Boolean?                   @default(false)
+  bookkeeping_cashflow         String?                    @db.VarChar(50)
+  bookkeeping_income_statement String?                    @db.VarChar(50)
   sales_volume                 Int?
   sales_unit                   String?                    @db.VarChar(50)
   production_capacity          Int?

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, Phone, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TableCell, TableRow } from "@/components/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMentors } from "@/hooks/use-mentors";
 import { Mentor } from "@/types/dashboard";
 import {
@@ -136,7 +137,7 @@ export default function MentorsPage() {
           setMentorSearch(value);
           setPage(1);
         }}
-        columns={["Photo", "Mentor", "University", "Contact", "Gender"]}
+        columns={["Foto", "Nama & Email", "Universitas", "Total Peserta", "Total Kunjungan"]}
         headerActions={
           <div className="flex flex-col gap-2 sm:flex-row">
             <Select
@@ -182,43 +183,47 @@ export default function MentorsPage() {
           <TableSkeleton rows={6} columns={5} />
         ) : mentors.length > 0 ? (
           mentors.map((mentor: Mentor) => (
-            <TableRow key={mentor.id} className="border-border hover:bg-accent">
+            <TableRow key={mentor.id} className="border-border hover:bg-accent cursor-pointer group">
               <TableCell>
-                <AvatarBubble photo={mentor.photo} name={mentor.name} />
+                <Link href={`/mentors/${mentor.id}`}>
+                  <AvatarBubble photo={mentor.photo} name={mentor.name} />
+                </Link>
               </TableCell>
               <TableCell>
-                <div className="flex flex-col">
-                  <span className="max-w-[220px] truncate font-medium text-foreground">{mentor.name}</span>
-                  <span className="max-w-[220px] truncate text-xs text-muted-foreground">
-                    {mentor.email || "No email"}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GraduationCap className="h-4 w-4 text-chart-3" />
-                  <div className="flex flex-col">
-                    <span className="max-w-[220px] truncate">
-                      {mentor.university?.name ?? "Not linked"}
-                    </span>
-                    <span className="max-w-[220px] truncate text-xs">
-                      {[mentor.university?.city, mentor.university?.province]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </span>
+                <Link href={`/mentors/${mentor.id}`} className="flex flex-col">
+                  <span className="max-w-[220px] truncate font-medium text-foreground group-hover:text-primary transition-colors">{mentor.name}</span>
+                  <div className="flex flex-col text-xs text-muted-foreground">
+                    <span className="truncate">{mentor.email || "No email"}</span>
+                    {mentor.nik && <span className="truncate">NIK: {mentor.nik}</span>}
                   </div>
-                </div>
+                </Link>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4 text-chart-2" />
-                  {mentor.phone || "No phone"}
-                </div>
+                <Link href={`/mentors/${mentor.id}`}>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <GraduationCap className="h-4 w-4 text-chart-3" />
+                    <div className="flex flex-col">
+                      <span className="max-w-[220px] truncate">
+                        {mentor.university?.name ?? "Not linked"}
+                      </span>
+                      <span className="max-w-[220px] truncate text-xs">
+                        {[mentor.university?.city, mentor.university?.province]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
               </TableCell>
-              <TableCell>
-                <Badge variant="secondary">
-                  {mentor.gender ? mentor.gender.toUpperCase() : "N/A"}
-                </Badge>
+              <TableCell className="text-center font-medium">
+                <Link href={`/mentors/${mentor.id}`}>
+                  {mentor.stats?.totalParticipants ?? 0}
+                </Link>
+              </TableCell>
+              <TableCell className="text-center font-medium">
+                <Link href={`/mentors/${mentor.id}`}>
+                  {mentor.stats?.totalLogbooks ?? 0}
+                </Link>
               </TableCell>
             </TableRow>
           ))

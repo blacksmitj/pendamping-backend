@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import {
     Table,
     TableBody,
@@ -51,21 +52,21 @@ export function TopPerformers({ topParticipants, topMentors, isLoading }: TopPer
                                 ))
                             ) : topParticipants.length > 0 ? (
                                 topParticipants.map((p, i) => (
-                                    <TableRow key={i}>
+                                    <TableRow key={i} className="cursor-pointer hover:bg-accent/50 transition-colors">
                                         <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
+                                            <Link href={`/participants/${p.id}`} className="flex items-center gap-2">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={p.photo || ""} />
                                                     <AvatarFallback>{getInitials(p.nama)}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm">{p.nama}</span>
+                                                    <span className="text-sm hover:underline">{p.nama}</span>
                                                     <span className="text-xs text-muted-foreground truncate max-w-[120px]">{p.nama_usaha}</span>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
                                                 {p.growth.toFixed(1)}%
                                             </Badge>
                                         </TableCell>
@@ -108,18 +109,18 @@ export function TopPerformers({ topParticipants, topMentors, isLoading }: TopPer
                                 ))
                             ) : topMentors.length > 0 ? (
                                 topMentors.map((m, i) => (
-                                    <TableRow key={i}>
+                                    <TableRow key={i} className="cursor-pointer hover:bg-accent/50 transition-colors">
                                         <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-slate-100 text-slate-500 text-xs shadow-sm border">
+                                            <Link href={`/mentors/${m.id}`} className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground text-xs shadow-sm border">
                                                     {i + 1}
                                                 </div>
                                                 <Avatar className="h-9 w-9">
                                                     <AvatarImage src={m.foto || ""} />
                                                     <AvatarFallback>{getInitials(m.name)}</AvatarFallback>
                                                 </Avatar>
-                                                <span className="truncate max-w-[150px]">{m.name}</span>
-                                            </div>
+                                                <span className="truncate max-w-[150px] hover:underline">{m.name}</span>
+                                            </Link>
                                         </TableCell>
                                         <TableCell className="text-right font-bold text-lg">
                                             {m.visit_count}

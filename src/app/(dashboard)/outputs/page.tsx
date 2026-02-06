@@ -74,7 +74,7 @@ export default function OutputsPage() {
         <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">
           Capaian Output
         </p>
-        <h1 className="text-3xl font-semibold text-slate-950 lg:text-4xl">
+        <h1 className="text-3xl font-semibold text-foreground lg:text-4xl">
           Rekap capaian output
         </h1>
         <p className="text-base text-muted-foreground">
@@ -110,9 +110,9 @@ export default function OutputsPage() {
               </SelectContent>
             </Select>
             <Select
-              value={filterCondition}
+              value={filterCondition || "all"}
               onValueChange={(value) => {
-                setFilterCondition(value);
+                setFilterCondition(value === "all" ? "" : value);
                 setPage(1);
               }}
             >
@@ -120,7 +120,7 @@ export default function OutputsPage() {
                 <SelectValue placeholder="Filter kondisi" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua kondisi</SelectItem>
+                <SelectItem value="all">Semua kondisi</SelectItem>
                 {conditionOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
@@ -129,9 +129,9 @@ export default function OutputsPage() {
               </SelectContent>
             </Select>
             <Select
-              value={filterVerified}
+              value={filterVerified || "all"}
               onValueChange={(value) => {
-                setFilterVerified(value);
+                setFilterVerified(value === "all" ? "" : value);
                 setPage(1);
               }}
             >
@@ -139,7 +139,7 @@ export default function OutputsPage() {
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua status</SelectItem>
+                <SelectItem value="all">Semua status</SelectItem>
                 {verifiedOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}

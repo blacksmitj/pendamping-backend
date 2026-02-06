@@ -22,6 +22,7 @@ export async function GET(request: Request) {
 
         // Define All Possible Columns
         const allColumns = [
+            { header: "ID Logbook", key: "id_logbook", width: 40 },
             { header: "Tanggal", key: "tanggal", width: 15 },
             { header: "ID TKM", key: "id_tkm", width: 15 },
             { header: "Nama", key: "nama", width: 25 },
@@ -259,6 +260,7 @@ export async function GET(request: Request) {
                 const mentorAsg = p.mentor_participants?.[0];
 
                 const row: any = {
+                    id_logbook: logbook.id,
                     tanggal: logbook.activity_date ? new Date(logbook.activity_date).toISOString().split('T')[0] : "",
                     id_tkm: p.legacy_tkm_id,
                     nama: profile?.full_name || "",

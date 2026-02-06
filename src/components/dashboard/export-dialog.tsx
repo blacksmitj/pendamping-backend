@@ -19,6 +19,7 @@ import { Download, Filter, Columns, Calendar as CalendarIcon, Loader2 } from "lu
 import { cn } from "@/lib/utils"
 
 const LOGBOOK_COLUMNS = [
+    { id: "id_logbook", label: "ID Logbook" },
     { id: "tanggal", label: "Tanggal" },
     { id: "id_tkm", label: "ID TKM" },
     { id: "nama", label: "Nama" },

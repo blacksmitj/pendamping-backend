@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import {
     Users,
     UserCheck,
@@ -20,36 +21,41 @@ export function StatsCards({ counts, isLoading }: StatsCardsProps) {
             label: "Total Participants",
             value: counts?.participants ?? 0,
             icon: Users,
-            color: "text-blue-500",
-            desc: "Registered & Verified"
+            colorClass: "text-chart-1 border-l-chart-1",
+            desc: "Registered & Verified",
+            href: "/participants"
         },
         {
             label: "Active Mentors",
             value: counts?.mentors ?? 0,
             icon: UserCheck,
-            color: "text-emerald-500",
-            desc: "Role: User"
+            colorClass: "text-chart-2 border-l-chart-2",
+            desc: "Role: User",
+            href: "/mentors"
         },
         {
             label: "Partner Universities",
             value: counts?.universities ?? 0,
             icon: School,
-            color: "text-purple-500",
-            desc: "Total Registered"
+            colorClass: "text-chart-3 border-l-chart-3",
+            desc: "Total Registered",
+            href: "/universities"
         },
         {
             label: "New Employees",
             value: counts?.newEmployees ?? 0,
             icon: Briefcase,
-            color: "text-orange-500",
-            desc: "Added by Participants"
+            colorClass: "text-chart-4 border-l-chart-4",
+            desc: "Added by Participants",
+            href: null
         },
         {
             label: "Avg. Omzet Growth",
             value: `${counts?.avgOmzetGrowth?.toFixed(1) ?? 0}%`,
             icon: TrendingUp,
-            color: "text-pink-500",
-            desc: "Global Average"
+            colorClass: "text-chart-5 border-l-chart-5",
+            desc: "Global Average",
+            href: null
         }
     ];
 
@@ -57,13 +63,15 @@ export function StatsCards({ counts, isLoading }: StatsCardsProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {stats.map((stat, index) => {
                 const Icon = stat.icon;
-                return (
-                    <Card key={index} className="overflow-hidden border-l-4" style={{ borderLeftColor: stat.color.replace('text-', 'var(--') }}>
+                const content = (
+                    <Card
+                        className={`overflow-hidden border-l-4 ${stat.colorClass.split(' ')[1]} ${stat.href ? 'cursor-pointer hover:shadow-md hover:bg-accent/50 transition-all' : ''}`}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 {stat.label}
                             </CardTitle>
-                            <Icon className={`h-4 w-4 ${stat.color}`} />
+                            <Icon className={`h-4 w-4 ${stat.colorClass.split(' ')[0]}`} />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
@@ -78,6 +86,14 @@ export function StatsCards({ counts, isLoading }: StatsCardsProps) {
                             </p>
                         </CardContent>
                     </Card>
+                );
+
+                return stat.href ? (
+                    <Link key={index} href={stat.href}>
+                        {content}
+                    </Link>
+                ) : (
+                    <div key={index}>{content}</div>
                 );
             })}
         </div>

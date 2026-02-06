@@ -16,6 +16,8 @@ export interface LogbookAttendee {
     provinsi_usaha: string;
     universitas: string;
     no_whatsapp: string;
+    omsetGrowth: number;
+    newJobs: number;
 }
 
 export interface LogbookPendamping {

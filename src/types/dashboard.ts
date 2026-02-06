@@ -22,12 +22,17 @@ export type Mentor = {
   phone: string;
   gender: string;
   photo: string | null;
+  nik?: string;
   university: {
     id: string;
     name: string;
-    city: string;
-    province: string;
+    city: string | null;
+    province: string | null;
   } | null;
+  stats?: {
+    totalParticipants: number;
+    totalLogbooks: number;
+  };
 };
 
 export type University = {
@@ -71,6 +76,7 @@ export type MapDistribution = {
 };
 
 export type TopOmzetParticipant = {
+  id: string;
   nama: string;
   nama_usaha: string;
   photo: string | null;
@@ -79,6 +85,7 @@ export type TopOmzetParticipant = {
 };
 
 export type UniversityStat = {
+  university_id: string;
   university_name: string;
   total_mentors: number;
   total_participants: number;
@@ -87,6 +94,7 @@ export type UniversityStat = {
 };
 
 export type TopMentorVisit = {
+  id: string;
   name: string;
   foto: string | null;
   visit_count: number;

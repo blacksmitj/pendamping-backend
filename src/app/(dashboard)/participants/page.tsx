@@ -172,7 +172,7 @@ export default function ParticipantsPage() {
           <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">
             Participants
           </p>
-          <h1 className="text-3xl font-semibold text-slate-950 lg:text-4xl">
+          <h1 className="text-3xl font-semibold text-foreground lg:text-4xl">
             Participant list
           </h1>
           <p className="max-w-2xl text-base text-muted-foreground">
@@ -438,14 +438,14 @@ export default function ParticipantsPage() {
 
               {/* New Columns */}
               <TableCell>
-                <span className={`font-medium ${(participant.omset_growth || 0) > 0 ? 'text-green-600' :
-                  (participant.omset_growth || 0) < 0 ? 'text-red-500' : 'text-muted-foreground'
+                <span className={`font-medium ${(participant.omset_growth || 0) > 0 ? 'text-chart-2' :
+                  (participant.omset_growth || 0) < 0 ? 'text-destructive' : 'text-muted-foreground'
                   }`}>
                   {participant.omset_growth ? `${participant.omset_growth.toFixed(1)}%` : "0%"}
                 </span>
               </TableCell>
               <TableCell className="text-center">
-                <span className={`font-medium ${(participant.new_employees || 0) > 0 ? 'text-green-600' : 'text-slate-700'}`}>
+                <span className={`font-medium ${(participant.new_employees || 0) > 0 ? 'text-chart-2' : 'text-muted-foreground'}`}>
                   {(participant.new_employees || 0) > 0 ? `+${participant.new_employees}` : participant.new_employees || 0}
                 </span>
               </TableCell>

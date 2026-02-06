@@ -1,9 +1,15 @@
 "use client";
 
+import * as React from "react";
 import dynamic from "next/dynamic";
 import { RefreshCw, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
+import {
+  useDashboardCounts,
+  useDashboardMap,
+  useDashboardTopPerformers,
+  useDashboardUniversityStats
+} from "@/hooks/use-dashboard-summary";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { TopPerformers } from "@/components/dashboard/top-performers";
 import { UniversityStats } from "@/components/dashboard/university-stats";
@@ -20,27 +26,37 @@ const DashboardMap = dynamic(
 );
 
 export default function DashboardPage() {
-  const {
-    data: summary,
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useDashboardSummary();
+  const { data: counts, isLoading: isLoadingCounts, isFetching: isFetchingCounts, refetch: refetchCounts, isError: isErrorCounts } = useDashboardCounts();
+  const { data: mapData, isLoading: isLoadingMap, isFetching: isFetchingMap, refetch: refetchMap, isError: isErrorMap } = useDashboardMap();
+  const { data: performers, isLoading: isLoadingPerformers, isFetching: isFetchingPerformers, refetch: refetchPerformers, isError: isErrorPerformers } = useDashboardTopPerformers();
+  const { data: univStats, isLoading: isLoadingUniv, isFetching: isFetchingUniv, refetch: refetchUniv, isError: isErrorUniv } = useDashboardUniversityStats();
+
+  const isFetching = isFetchingCounts || isFetchingMap || isFetchingPerformers || isFetchingUniv;
+  const isError = isErrorCounts || isErrorMap || isErrorPerformers || isErrorUniv;
+
+  const [lastUpdated, setLastUpdated] = React.useState<string>("");
+
+  React.useEffect(() => {
+    // Only set on client after mount, and update when fetching finishes
+    if (!isFetching) {
+      setLastUpdated(new Date().toLocaleString());
+    }
+  }, [isFetching]);
 
   const handleRefresh = async () => {
-    await refetch();
+    await Promise.all([
+      refetchCounts(),
+      refetchMap(),
+      refetchPerformers(),
+      refetchUniv()
+    ]);
   };
-
-  const lastUpdated = summary?.updatedAt
-    ? new Date(summary.updatedAt).toLocaleString()
-    : "Not available";
 
   if (isError) {
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center space-y-4">
         <h2 className="text-xl font-semibold text-destructive">Failed to load dashboard data</h2>
-        <Button onClick={() => refetch()}>Try Again</Button>
+        <Button onClick={() => handleRefresh()}>Try Again</Button>
       </div>
     );
   }
@@ -90,7 +106,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Stats */}
-      <StatsCards counts={summary?.counts} isLoading={isLoading} />
+      <StatsCards counts={counts} isLoading={isLoadingCounts} />
 
       {/* Map Section */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -103,7 +119,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="p-0 sm:p-6 pt-0">
             <div className="h-[400px] w-full rounded-xl overflow-hidden">
-              <DashboardMap data={summary?.mapDistribution || []} />
+              {isLoadingMap ? (
+                <div className="h-[400px] w-full animate-pulse rounded-xl bg-muted/20" />
+              ) : (
+                <DashboardMap data={mapData || []} />
+              )}
             </div>
           </CardContent>
         </Card>
@@ -111,15 +131,15 @@ export default function DashboardPage() {
 
       {/* Top Performers (Growth & Mentors) */}
       <TopPerformers
-        topParticipants={summary?.topOmzetParticipants || []}
-        topMentors={summary?.topMentorsVisits || []}
-        isLoading={isLoading}
+        topParticipants={performers?.topParticipants || []}
+        topMentors={performers?.topMentors || []}
+        isLoading={isLoadingPerformers}
       />
 
       {/* University Stats */}
       <UniversityStats
-        stats={summary?.universityStats || []}
-        isLoading={isLoading}
+        stats={univStats || []}
+        isLoading={isLoadingUniv}
       />
     </div>
   );

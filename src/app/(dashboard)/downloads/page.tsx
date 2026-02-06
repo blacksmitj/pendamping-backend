@@ -167,12 +167,12 @@ export default function DownloadsPage() {
                                     <TableRow key={log.id} className="hover:bg-accent/50 transition-colors">
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
-                                                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                                                <FileSpreadsheet className="h-4 w-4 text-primary" />
                                                 <span className="truncate max-w-[200px]">{log.filename}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
                                                 {getReportTypeLabel(log.type)}
                                             </Badge>
                                         </TableCell>
@@ -185,9 +185,9 @@ export default function DownloadsPage() {
                                         <TableCell>
                                             <div className="flex items-center gap-1.5">
                                                 {log.status === "completed" ? (
-                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                                 ) : (
-                                                    <Clock className="h-4 w-4 text-yellow-500" />
+                                                    <Clock className="h-4 w-4 text-amber-500" />
                                                 )}
                                                 <span className="text-xs capitalize">{log.status}</span>
                                             </div>

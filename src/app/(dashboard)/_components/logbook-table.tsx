@@ -165,7 +165,7 @@ export function LogbookTable({
                             {entry.tkmName ?? "Tanpa nama"}
                           </span>
                           {entry.isGroup && (
-                            <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-50 text-blue-600 border-blue-200">
+                            <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-primary/10 text-primary border-primary/20">
                               <Users className="mr-0.5 h-2 w-2" />
                               Group
                             </Badge>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, RefreshCw, Power, PowerOff } from "lucide-react";
+import { Building2, RefreshCw, Power, PowerOff, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,7 +109,7 @@ export default function UniversitiesPage() {
           <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">
             Universities
           </p>
-          <h1 className="text-3xl font-semibold text-slate-950 lg:text-4xl">
+          <h1 className="text-3xl font-semibold text-foreground lg:text-4xl">
             University list
           </h1>
           <p className="max-w-2xl text-base text-muted-foreground">
@@ -221,37 +222,47 @@ export default function UniversitiesPage() {
                 universities.map((university: University) => (
                   <TableRow key={university.id}>
                     <TableCell>
-                      <AvatarBubble
-                        photo={university.photo}
-                        name={university.name}
-                      />
+                      <Link href={`/universities/${university.id}`}>
+                        <AvatarBubble
+                          photo={university.photo}
+                          name={university.name}
+                        />
+                      </Link>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 font-medium">
+                      <Link href={`/universities/${university.id}`} className="flex items-center gap-2 font-medium group">
                         <Building2 className="h-4 w-4 text-primary" />
-                        <span className="max-w-[220px] truncate">
+                        <span className="max-w-[220px] truncate group-hover:text-primary transition-colors">
                           {university.name}
                         </span>
-                      </div>
+                      </Link>
                     </TableCell>
                     <TableCell className="max-w-[160px] truncate text-sm text-muted-foreground">
-                      {university.city}
+                      <Link href={`/universities/${university.id}`}>
+                        {university.city}
+                      </Link>
                     </TableCell>
                     <TableCell className="max-w-[160px] truncate text-sm text-muted-foreground">
-                      {university.province}
+                      <Link href={`/universities/${university.id}`}>
+                        {university.province}
+                      </Link>
                     </TableCell>
                     <TableCell className="max-w-[220px] truncate text-sm text-muted-foreground">
-                      {university.alamat ?? "No address"}
+                      <Link href={`/universities/${university.id}`}>
+                        {university.alamat ?? "No address"}
+                      </Link>
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${university.status === "active"
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20"
-                            : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                          }`}
-                      >
-                        {university.status === "active" ? "Active" : "Inactive"}
-                      </span>
+                      <Link href={`/universities/${university.id}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${university.status === "active"
+                            ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+                            : "bg-destructive/10 text-destructive ring-1 ring-inset ring-destructive/20"
+                            }`}
+                        >
+                          {university.status === "active" ? "Active" : "Inactive"}
+                        </span>
+                      </Link>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -281,8 +292,8 @@ export default function UniversitiesPage() {
                         }}
                         className={
                           university.status === "active"
-                            ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                            ? "text-destructive hover:bg-destructive/10"
+                            : "text-primary hover:bg-primary/10"
                         }
                       >
                         {university.status === "active" ? (

@@ -32,8 +32,9 @@ export async function GET(request: Request) {
     if (search) {
       where.OR = [
         { users: { email: { contains: search, mode: 'insensitive' } } },
-        { users: { email: { contains: search, mode: 'insensitive' } } },
-        { users: { profiles: { whatsapp_number: { contains: search, mode: 'insensitive' } } } }
+        { users: { profiles: { full_name: { contains: search, mode: 'insensitive' } } } },
+        { users: { profiles: { whatsapp_number: { contains: search, mode: 'insensitive' } } } },
+        { users: { profiles: { universities: { name: { contains: search, mode: 'insensitive' } } } } }
       ];
     }
 
@@ -49,7 +50,17 @@ export async function GET(request: Request) {
       include: {
         users: {
           include: {
-            profiles: true
+            profiles: {
+              include: {
+                universities: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            mentor_participants: true,
+            logbooks: true
           }
         }
       }
@@ -58,14 +69,25 @@ export async function GET(request: Request) {
     const data = mentors.map((m) => {
       const user = m.users;
       const profile = user?.profiles;
+      const university = profile?.universities;
       return {
         id: m.id,
-        name: user?.email || "Unknown",
+        name: profile?.full_name || user?.email || "Unknown",
         email: user?.email ?? "",
         phone: profile?.whatsapp_number ?? "",
+        nik: profile?.id_number ?? "",
         gender: profile?.gender ?? "",
         photo: profile?.avatar_url ?? null,
-        university: null // University connection not directly in mentors table in new schema
+        university: university ? {
+          id: university.id,
+          name: university.name,
+          city: university.city,
+          province: university.province
+        } : null,
+        stats: {
+          totalParticipants: m._count.mentor_participants,
+          totalLogbooks: m._count.logbooks
+        }
       };
     });
 

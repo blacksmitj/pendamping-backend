@@ -71,8 +71,8 @@ export async function GET(
                 month_report: output.report_month,
 
                 // Financial Records
-                bookkeeping_cashflow: output.bookkeeping_cashflow ? "T" : "F",
-                bookkeeping_income_statement: output.bookkeeping_income_statement ? "T" : "F",
+                bookkeeping_cashflow: output.bookkeeping_cashflow,
+                bookkeeping_income_statement: output.bookkeeping_income_statement,
                 cashflow_proof_url: null,
                 income_proof_url: null,
 
