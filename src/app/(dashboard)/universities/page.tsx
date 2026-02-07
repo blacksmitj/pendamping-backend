@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, RefreshCw, Power, PowerOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { usePersistentState } from "@/hooks/use-persistent-state";
+import { Building2, RefreshCw, Power, PowerOff, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +24,8 @@ import {
   PaginationControls,
   TableSkeleton,
 } from "../_components/dashboard-ui";
+import { FilterSortDrawer } from "@/components/universities/filter-sort-drawer";
+import { Badge } from "@/components/ui/badge";
 
 const sortOptions = [
   { value: "name_asc", label: "Name A-Z", sortBy: "name", sortOrder: "asc" },
@@ -46,21 +50,12 @@ function AvatarBubble({
   name?: string | null;
 }) {
   return (
-    <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted text-sm font-semibold text-muted-foreground">
-      <div className="absolute inset-0 flex items-center justify-center uppercase">
+    <Avatar className="h-10 w-10 border border-border/50 shadow-sm">
+      {photo && <AvatarImage src={photo} alt={name ?? ""} className="object-cover" />}
+      <AvatarFallback className="bg-muted text-xs font-bold text-muted-foreground uppercase">
         {getInitials(name)}
-      </div>
-      {photo ? (
-        <img
-          src={photo}
-          alt={name ?? "University logo"}
-          className="h-full w-full object-cover"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      ) : null}
-    </div>
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -68,8 +63,9 @@ export default function UniversitiesPage() {
   const [universitySearch, setUniversitySearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [sortOption, setSortOption] = useState(sortOptions[0].value);
-  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [sortOption, setSortOption] = usePersistentState("universities-sortOption", sortOptions[0].value);
+  const [showActiveOnly, setShowActiveOnly] = usePersistentState("universities-showActiveOnly", true);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const activeSort =
     sortOptions.find((option) => option.value === sortOption) ?? sortOptions[0];
@@ -101,6 +97,12 @@ export default function UniversitiesPage() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  const handleResetFilters = () => {
+    setShowActiveOnly(true);
+    setSortOption(sortOptions[0].value);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-10">
@@ -147,41 +149,24 @@ export default function UniversitiesPage() {
                 setUniversitySearch(event.target.value);
                 setPage(1);
               }}
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 bg-muted/50 border-border/60 rounded-xl"
             />
-            <div className="flex items-center gap-2 px-2">
-              <input
-                type="checkbox"
-                id="active-only"
-                checked={showActiveOnly}
-                onChange={(e) => {
-                  setShowActiveOnly(e.target.checked);
-                  setPage(1);
-                }}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="active-only" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                Active Only
-              </label>
-            </div>
-            <Select
-              value={sortOption}
-              onValueChange={(value) => {
-                setSortOption(value);
-                setPage(1);
-              }}
+
+            <Button
+              variant="outline"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className={`h-10 gap-2 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all ${!showActiveOnly ? "bg-primary/5 border-primary/30 text-primary font-medium" : "bg-muted/50"
+                }`}
             >
-              <SelectTrigger className="h-10 w-full sm:w-48">
-                <SelectValue placeholder="Urutkan" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    Sort: {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Filter className={`h-4 w-4 ${!showActiveOnly ? "text-primary" : "text-muted-foreground"}`} />
+              <span>Filter & Urutkan</span>
+              {!showActiveOnly && (
+                <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground border-none text-[10px] font-bold">
+                  1
+                </Badge>
+              )}
+            </Button>
+
             <Select
               value={String(pageSize)}
               onValueChange={(value) => {
@@ -189,10 +174,10 @@ export default function UniversitiesPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-full sm:w-32">
+              <SelectTrigger className="h-10 w-full sm:w-32 bg-muted/50 border-border/60 rounded-xl font-medium">
                 <SelectValue placeholder="Page size" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {pageSizeOptions.map((size) => (
                   <SelectItem key={size} value={String(size)}>
                     {size} / page
@@ -200,6 +185,17 @@ export default function UniversitiesPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <FilterSortDrawer
+              open={isFilterDrawerOpen}
+              onOpenChange={setIsFilterDrawerOpen}
+              showActiveOnly={showActiveOnly}
+              onShowActiveOnlyChange={setShowActiveOnly}
+              sortOption={sortOption}
+              onSortOptionChange={setSortOption}
+              sortOptions={sortOptions}
+              onReset={handleResetFilters}
+            />
           </div>
         </CardHeader>
         <CardContent>

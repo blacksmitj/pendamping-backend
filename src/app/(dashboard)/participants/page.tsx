@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -33,6 +35,7 @@ import {
   statusVariant,
 } from "../_components/dashboard-ui";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { FilterSortDrawer } from "@/components/participants/filter-sort-drawer";
 
 const fieldOptions = [
   { value: "registered", label: "Tanggal Daftar" },
@@ -65,21 +68,12 @@ function AvatarBubble({
   name?: string | null;
 }) {
   return (
-    <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted text-sm font-semibold text-muted-foreground">
-      <div className="absolute inset-0 flex items-center justify-center uppercase">
+    <Avatar className="h-10 w-10 border border-border/50 shadow-sm">
+      {photo && <AvatarImage src={photo} alt={name ?? ""} className="object-cover" />}
+      <AvatarFallback className="bg-muted text-xs font-bold text-muted-foreground uppercase">
         {getInitials(name)}
-      </div>
-      {photo ? (
-        <img
-          src={photo}
-          alt={name ?? "Profile photo"}
-          className="h-full w-full object-cover"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      ) : null}
-    </div>
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -88,15 +82,24 @@ export default function ParticipantsPage() {
   const [participantSearch, setParticipantSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [sortBy, setSortBy] = useState(fieldOptions[0].value);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy, resetSortBy] = usePersistentState("participants-sortBy", fieldOptions[0].value);
+  const [sortOrder, setSortOrder, resetSortOrder] = usePersistentState<"asc" | "desc">("participants-sortOrder", "desc");
 
   // Filters State
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [provinceFilter, setProvinceFilter] = useState("all");
-  const [cityFilter, setCityFilter] = useState("all");
-  const [sectorFilter, setSectorFilter] = useState("all");
-  const [batchFilter, setBatchFilter] = useState("all");
+  const [statusFilter, setStatusFilter, resetStatusFilter] = usePersistentState("participants-statusFilter", "all");
+  const [provinceFilter, setProvinceFilter, resetProvinceFilter] = usePersistentState("participants-provinceFilter", "all");
+  const [cityFilter, setCityFilter, resetCityFilter] = usePersistentState("participants-cityFilter", "all");
+  const [sectorFilter, setSectorFilter, resetSectorFilter] = usePersistentState("participants-sectorFilter", "all");
+  const [batchFilter, setBatchFilter, resetBatchFilter] = usePersistentState("participants-batchFilter", "all");
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  const activeFilterCount = [
+    statusFilter !== "all",
+    provinceFilter !== "all",
+    cityFilter !== "all",
+    sectorFilter !== "all",
+    batchFilter !== "all",
+  ].filter(Boolean).length;
 
   // Filter Options State
   const [filterOptions, setFilterOptions] = useState<{
@@ -165,6 +168,17 @@ export default function ParticipantsPage() {
     setPage(1);
   };
 
+  const handleResetFilters = () => {
+    resetStatusFilter();
+    resetProvinceFilter();
+    resetCityFilter();
+    resetSectorFilter();
+    resetBatchFilter();
+    resetSortBy();
+    resetSortOrder();
+    setPage(1);
+  };
+
   return (
     <div className="space-y-10">
       <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -201,7 +215,7 @@ export default function ParticipantsPage() {
         columns={["Peserta", "Usaha & Industri", "Lokasi", "Status", "Growth", "Karyawan"]}
         customHeader={
           <div className="flex flex-col gap-6">
-            {/* Row 1: Search & Rows Per Page */}
+            {/* Row 1: Search & Actions */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="relative w-full md:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,183 +226,71 @@ export default function ParticipantsPage() {
                     setParticipantSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-10 bg-muted/50 border-input h-10"
+                  className="pl-10 bg-muted/50 border-input h-10 rounded-xl"
                 />
               </div>
-              <div className="flex items-center gap-3 w-full md:w-auto self-end">
-                <span className="text-sm font-medium text-muted-foreground">Tampilkan</span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(value) => {
-                    setPageSize(Number(value));
-                    setPage(1);
-                  }}
+              <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsFilterDrawerOpen(true)}
+                  className={`h-10 gap-2 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all ${activeFilterCount > 0 ? "bg-primary/5 border-primary/30 text-primary font-medium" : "bg-muted/50"
+                    }`}
                 >
-                  <SelectTrigger className="h-10 w-[100px] bg-muted/50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pageSizeOptions.map((size) => (
-                      <SelectItem key={size} value={String(size)}>
-                        {size} Baris
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  <Filter className={`h-4 w-4 ${activeFilterCount > 0 ? "text-primary" : "text-muted-foreground"}`} />
+                  <span>Filter & Urutkan</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground border-none text-[10px] font-bold">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
 
-            {/* Row 2: Filters Group */}
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Filter Peserta</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Status</label>
-                  <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
-                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Status" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Status</SelectItem>
-                      {filterOptions.statuses.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Provinsi</label>
-                  <Select value={provinceFilter} onValueChange={handleFilterChange(setProvinceFilter)}>
-                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Provinsi" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Provinsi</SelectItem>
-                      {filterOptions.provinces.map((p) => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Kota/Kabupaten</label>
-                  <Select value={cityFilter} onValueChange={handleFilterChange(setCityFilter)}>
-                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Kota" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Kota</SelectItem>
-                      {filterOptions.cities.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Industri</label>
-                  <Select value={sectorFilter} onValueChange={handleFilterChange(setSectorFilter)}>
-                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Bidang Usaha" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Industri</SelectItem>
-                      {filterOptions.sectors.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Batch</label>
-                  <Select value={batchFilter} onValueChange={handleFilterChange(setBatchFilter)}>
-                    <SelectTrigger className="h-10 w-full bg-background border-border/60">
-                      <div className="flex items-center gap-2">
-                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Batch" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Batch</SelectItem>
-                      {filterOptions.batches.map((b) => (
-                        <SelectItem key={b} value={b}>{b}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 3: Sorting Group */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
-              <div className="flex items-center gap-2">
-                <ArrowUpDown className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Urutkan</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 w-full">
-                <Select
-                  value={sortBy}
-                  onValueChange={(value) => {
-                    setSortBy(value);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="h-10 w-full sm:w-[220px] bg-background border-primary/20">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Berdasarkan:</span>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tampilkan</span>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(value) => {
+                      setPageSize(Number(value));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 w-[90px] bg-muted/50 border-border/60 rounded-xl font-medium">
                       <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fieldOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={sortOrder}
-                  onValueChange={(value) => {
-                    setSortOrder(value as "asc" | "desc");
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="h-10 w-full sm:w-[220px] bg-background border-primary/20">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Urutan:</span>
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {orderOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {pageSizeOptions.map((size) => (
+                        <SelectItem key={size} value={String(size)}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+
+            <FilterSortDrawer
+              open={isFilterDrawerOpen}
+              onOpenChange={setIsFilterDrawerOpen}
+              statusFilter={statusFilter}
+              provinceFilter={provinceFilter}
+              cityFilter={cityFilter}
+              sectorFilter={sectorFilter}
+              batchFilter={batchFilter}
+              onStatusChange={handleFilterChange(setStatusFilter)}
+              onProvinceChange={handleFilterChange(setProvinceFilter)}
+              onCityChange={handleFilterChange(setCityFilter)}
+              onSectorChange={handleFilterChange(setSectorFilter)}
+              onBatchChange={handleFilterChange(setBatchFilter)}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortByChange={setSortBy}
+              onSortOrderChange={setSortOrder}
+              filterOptions={filterOptions}
+              fieldOptions={fieldOptions}
+              orderOptions={orderOptions}
+              onReset={handleResetFilters}
+            />
           </div>
         }
 

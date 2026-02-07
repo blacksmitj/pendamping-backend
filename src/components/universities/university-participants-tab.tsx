@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, ChevronLeft, ChevronRight, Building, Search, RefreshCw } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import Link from "next/link";
@@ -13,13 +14,12 @@ import { ParticipantCard } from "@/app/(dashboard)/_components/participant-card"
 function AvatarBubble({ photo, name }: { photo?: string | null; name: string }) {
     const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
     return (
-        <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground mr-3">
-            {photo ? (
-                <img src={photo} alt={name} className="h-full w-full object-cover" />
-            ) : (
-                initials
-            )}
-        </div>
+        <Avatar className="h-10 w-10 border border-border/50 shadow-sm mr-3">
+            {photo && <AvatarImage src={photo} alt={name} className="object-cover" />}
+            <AvatarFallback className="bg-muted text-xs font-bold text-muted-foreground uppercase">
+                {initials}
+            </AvatarFallback>
+        </Avatar>
     );
 }
 

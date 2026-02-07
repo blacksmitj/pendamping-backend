@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useParticipantLogbooks } from "@/hooks/use-participant-logbooks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -61,6 +62,7 @@ const formatTime = (time: Date | null) => {
 };
 
 export function LogbookTab({ participantId }: { participantId: string }) {
+    const router = useRouter();
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
     const [monthFilter, setMonthFilter] = useState("all");
@@ -166,7 +168,11 @@ export function LogbookTab({ participantId }: { participantId: string }) {
                                 ))
                             ) : logbooks.length > 0 ? (
                                 logbooks.map((logbook) => (
-                                    <TableRow key={logbook.id}>
+                                    <TableRow
+                                        key={logbook.id}
+                                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                        onClick={() => router.push(`/logbooks/${logbook.id}`)}
+                                    >
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />

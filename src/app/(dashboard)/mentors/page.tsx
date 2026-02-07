@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 import { GraduationCap, Phone, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,9 @@ import {
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMentors } from "@/hooks/use-mentors";
 import { Mentor } from "@/types/dashboard";
+import { FilterSortDrawer } from "@/components/mentors/filter-sort-drawer";
+import { Filter } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DataCard,
   PaginationControls,
@@ -45,21 +49,12 @@ function AvatarBubble({
   name?: string | null;
 }) {
   return (
-    <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted text-sm font-semibold text-muted-foreground">
-      <div className="absolute inset-0 flex items-center justify-center uppercase">
+    <Avatar className="h-10 w-10 border border-border/50 shadow-sm">
+      {photo && <AvatarImage src={photo} alt={name ?? ""} className="object-cover" />}
+      <AvatarFallback className="bg-muted text-xs font-bold text-muted-foreground uppercase">
         {getInitials(name)}
-      </div>
-      {photo ? (
-        <img
-          src={photo}
-          alt={name ?? "Profile photo"}
-          className="h-full w-full object-cover"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      ) : null}
-    </div>
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -67,7 +62,8 @@ export default function MentorsPage() {
   const [mentorSearch, setMentorSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [sortOption, setSortOption] = useState(sortOptions[0].value);
+  const [sortOption, setSortOption] = usePersistentState("mentors-sortOption", sortOptions[0].value);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const activeSort =
     sortOptions.find((option) => option.value === sortOption) ?? sortOptions[0];
@@ -95,6 +91,11 @@ export default function MentorsPage() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  const handleResetFilters = () => {
+    setSortOption(sortOptions[0].value);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-10">
@@ -139,25 +140,16 @@ export default function MentorsPage() {
         }}
         columns={["Foto", "Nama & Email", "Universitas", "Total Peserta", "Total Kunjungan"]}
         headerActions={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Select
-              value={sortOption}
-              onValueChange={(value) => {
-                setSortOption(value);
-                setPage(1);
-              }}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              variant="outline"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className="h-10 gap-2 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all bg-muted/50"
             >
-              <SelectTrigger className="h-10 w-full sm:w-48">
-                <SelectValue placeholder="Urutkan" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    Sort: {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span>Urutkan</span>
+            </Button>
+
             <Select
               value={String(pageSize)}
               onValueChange={(value) => {
@@ -165,10 +157,10 @@ export default function MentorsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-full sm:w-32">
+              <SelectTrigger className="h-10 w-full sm:w-32 bg-muted/50 border-border/60 rounded-xl font-medium">
                 <SelectValue placeholder="Page size" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {pageSizeOptions.map((size) => (
                   <SelectItem key={size} value={String(size)}>
                     {size} / page
@@ -176,6 +168,15 @@ export default function MentorsPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <FilterSortDrawer
+              open={isFilterDrawerOpen}
+              onOpenChange={setIsFilterDrawerOpen}
+              sortOption={sortOption}
+              onSortOptionChange={setSortOption}
+              sortOptions={sortOptions}
+              onReset={handleResetFilters}
+            />
           </div>
         }
       >

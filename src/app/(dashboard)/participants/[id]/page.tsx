@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useParticipantDetail } from "@/hooks/use-participant-detail";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +36,7 @@ import { DocumentsTab } from "@/components/participants/documents-tab";
 import { OutputTab } from "@/components/participants/output-tab";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { FilePreviewDrawer } from "@/components/dashboard/file-preview-drawer";
 
 // Helper function to format currency
 const formatCurrency = (value: number | null) => {
@@ -69,7 +71,19 @@ export default function ParticipantDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
     const [isImageOpen, setIsImageOpen] = useState(false);
+
+    const activeTab = searchParams.get("tab") || "output";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", value);
+        router.replace(`${pathname}?${params.toString()}`);
+    };
+
     const { data: participant, isLoading, isError } = useParticipantDetail(id);
 
     if (isLoading) {
@@ -117,41 +131,27 @@ export default function ParticipantDetailPage({
 
     return (
         <div className="w-full space-y-6 pb-20 animate-in fade-in duration-500">
-            {/* Image Preview Modal */}
-            {isImageOpen && participant.foto && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-                    onClick={() => setIsImageOpen(false)}
-                >
-                    <div className="relative max-h-full max-w-full">
-                        <img
-                            src={participant.foto}
-                            alt={participant.nama || "Profile"}
-                            className="h-auto w-auto max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsImageOpen(false);
-                            }}
-                            className="absolute -top-4 -right-4 bg-background text-foreground rounded-full p-2 shadow-lg border border-border hover:bg-accent transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Image Preview Drawer */}
+            <FilePreviewDrawer
+                open={isImageOpen}
+                onOpenChange={setIsImageOpen}
+                fileUrl={participant.foto || null}
+                fileName={participant.nama}
+                fileType="image"
+            />
 
             {/* Breadcrumb & Compact Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/participants">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => router.back()}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
                         <span className="text-sm font-medium text-muted-foreground">Participants</span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm font-bold text-foreground">Detail Profil</span>
@@ -217,7 +217,7 @@ export default function ParticipantDetailPage({
                     </div>
 
                     {/* Activity Tabs */}
-                    <Tabs defaultValue="output" className="space-y-6">
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsList className="bg-muted/30 p-1 h-12 w-full grid grid-cols-4 md:w-auto md:inline-flex">
                             <TabsTrigger value="detail" className="gap-2 font-bold data-[state=active]:shadow-sm">
                                 <Info className="h-4 w-4" /> <span className="hidden sm:inline">Detail Profil</span><span className="sm:hidden">Info</span>

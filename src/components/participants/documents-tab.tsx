@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileText, CheckCircle2, XCircle, Image as ImageIcon } from "lucide-react";
+import { ExternalLink, FileText, CheckCircle2, XCircle, Image as ImageIcon, Eye } from "lucide-react";
 import type { DocumentItem, DocumentItemWithMetadata, DocumentItemMultiple } from "@/types/participant";
+import { useState } from "react";
+import { FilePreviewDrawer } from "@/components/dashboard/file-preview-drawer";
 
 function DocumentStatusBadge({ uploaded }: { uploaded: boolean }) {
     if (uploaded) {
@@ -30,11 +32,13 @@ function DocumentCard({
     doc,
     multiple = false,
     metadata = false,
+    onPreview,
 }: {
     title: string;
     doc: DocumentItem | DocumentItemWithMetadata | DocumentItemMultiple;
     multiple?: boolean;
     metadata?: boolean;
+    onPreview: (url: string, title: string) => void;
 }) {
     const isMultiple = multiple && 'urls' in doc;
     const isUploaded = doc.uploaded;
@@ -68,9 +72,9 @@ function DocumentCard({
                                     key={index}
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => window.open(url, "_blank")}
+                                    onClick={() => onPreview(url, `${title} - Foto ${index + 1}`)}
                                 >
-                                    <ImageIcon className="mr-2 h-4 w-4" />
+                                    <Eye className="mr-2 h-4 w-4" />
                                     Foto {index + 1}
                                 </Button>
                             ))
@@ -79,9 +83,9 @@ function DocumentCard({
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => window.open(doc.url!, "_blank")}
+                                    onClick={() => onPreview(doc.url!, title)}
                                 >
-                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                    <Eye className="mr-2 h-4 w-4" />
                                     Preview
                                 </Button>
                             )
@@ -95,6 +99,11 @@ function DocumentCard({
 
 export function DocumentsTab({ participantId }: { participantId: string }) {
     const { data, isLoading, isError } = useParticipantDocuments(participantId);
+    const [preview, setPreview] = useState<{ url: string; title: string } | null>(null);
+
+    const handlePreview = (url: string, title: string) => {
+        setPreview({ url, title });
+    };
 
     if (isLoading) {
         return (
@@ -122,6 +131,12 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
 
     return (
         <div className="space-y-6">
+            <FilePreviewDrawer
+                open={!!preview}
+                onOpenChange={(open) => !open && setPreview(null)}
+                fileUrl={preview?.url || null}
+                fileName={preview?.title || null}
+            />
             {/* Stats Card */}
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
@@ -161,9 +176,9 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
                     <CardDescription>KTP, KK, dan Pas Foto</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <DocumentCard title="KTP" doc={documents.personal.ktp} />
-                    <DocumentCard title="Kartu Keluarga" doc={documents.personal.kk} />
-                    <DocumentCard title="Pas Foto" doc={documents.personal.pasFoto} />
+                    <DocumentCard title="KTP" doc={documents.personal.ktp} onPreview={handlePreview} />
+                    <DocumentCard title="Kartu Keluarga" doc={documents.personal.kk} onPreview={handlePreview} />
+                    <DocumentCard title="Pas Foto" doc={documents.personal.pasFoto} onPreview={handlePreview} />
                 </CardContent>
             </Card>
 
@@ -174,14 +189,14 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
                     <CardDescription>Legalitas dan profil usaha</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <DocumentCard title="Profil Usaha" doc={documents.business.profilUsaha} />
-                    <DocumentCard title="Business Model Canvas (BMC)" doc={documents.business.bmc} />
-                    <DocumentCard title="RAB" doc={documents.business.rab} />
-                    <DocumentCard title="Rencana Pengembangan" doc={documents.business.rencanaPengembangan} />
-                    <DocumentCard title="Video Usaha" doc={documents.business.videoUsaha} />
-                    <DocumentCard title="Pencatatan Keuangan" doc={documents.business.pencatatanKeuangan} />
+                    <DocumentCard title="Profil Usaha" doc={documents.business.profilUsaha} onPreview={handlePreview} />
+                    <DocumentCard title="Business Model Canvas (BMC)" doc={documents.business.bmc} onPreview={handlePreview} />
+                    <DocumentCard title="RAB" doc={documents.business.rab} onPreview={handlePreview} />
+                    <DocumentCard title="Rencana Pengembangan" doc={documents.business.rencanaPengembangan} onPreview={handlePreview} />
+                    <DocumentCard title="Video Usaha" doc={documents.business.videoUsaha} onPreview={handlePreview} />
+                    <DocumentCard title="Pencatatan Keuangan" doc={documents.business.pencatatanKeuangan} onPreview={handlePreview} />
                     <div className="md:col-span-2">
-                        <DocumentCard title="Foto Usaha" doc={documents.business.fotoUsaha} multiple />
+                        <DocumentCard title="Foto Usaha" doc={documents.business.fotoUsaha} multiple onPreview={handlePreview} />
                     </div>
                 </CardContent>
             </Card>
@@ -193,9 +208,9 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
                     <CardDescription>NIB, SKU, dan dokumen lainnya</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <DocumentCard title="NIB" doc={documents.legality.nib} metadata />
-                    <DocumentCard title="Surat Keterangan Usaha (SKU)" doc={documents.legality.sku} metadata />
-                    <DocumentCard title="Dokumen Legalitas Lainnya" doc={documents.legality.legalitas} metadata />
+                    <DocumentCard title="NIB" doc={documents.legality.nib} metadata onPreview={handlePreview} />
+                    <DocumentCard title="Surat Keterangan Usaha (SKU)" doc={documents.legality.sku} metadata onPreview={handlePreview} />
+                    <DocumentCard title="Dokumen Legalitas Lainnya" doc={documents.legality.legalitas} metadata onPreview={handlePreview} />
                 </CardContent>
             </Card>
 
@@ -206,9 +221,9 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
                     <CardDescription>LPJ, BAST, dan dokumentasi</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <DocumentCard title="LPJ 2024" doc={documents.financial.lpj2024} />
-                    <DocumentCard title="BAST 2024" doc={documents.financial.bast2024} />
-                    <DocumentCard title="Dokumentasi Usaha" doc={documents.financial.dokumentasiUsaha} />
+                    <DocumentCard title="LPJ 2024" doc={documents.financial.lpj2024} onPreview={handlePreview} />
+                    <DocumentCard title="BAST 2024" doc={documents.financial.bast2024} onPreview={handlePreview} />
+                    <DocumentCard title="Dokumentasi Usaha" doc={documents.financial.dokumentasiUsaha} onPreview={handlePreview} />
                 </CardContent>
             </Card>
 
@@ -219,8 +234,8 @@ export function DocumentsTab({ participantId }: { participantId: string }) {
                     <CardDescription>Surat permohonan dan pernyataan</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <DocumentCard title="Surat Permohonan" doc={documents.application.suratPermohonan} />
-                    <DocumentCard title="Surat Pernyataan" doc={documents.application.suratPernyataan} />
+                    <DocumentCard title="Surat Permohonan" doc={documents.application.suratPermohonan} onPreview={handlePreview} />
+                    <DocumentCard title="Surat Pernyataan" doc={documents.application.suratPernyataan} onPreview={handlePreview} />
                 </CardContent>
             </Card>
         </div>

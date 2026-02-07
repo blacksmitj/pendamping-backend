@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLogbookDetail } from "@/hooks/use-logbook-detail";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,6 +32,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import Link from "next/link";
 import { ParticipantCard } from "@/app/(dashboard)/_components/participant-card";
+import { FilePreviewDrawer } from "@/components/dashboard/file-preview-drawer";
 import { cn } from "@/lib/utils";
 
 const formatCurrency = (value: number | null) => {
@@ -81,6 +83,7 @@ export default function LogbookDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const router = useRouter();
     const { data: logbook, isLoading, isError } = useLogbookDetail(id);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -132,40 +135,26 @@ export default function LogbookDetailPage({
 
     return (
         <div className="w-full space-y-6 pb-20">
-            {/* Image Preview Modal */}
-            {previewImage && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md p-4 animate-in fade-in duration-300"
-                    onClick={() => setPreviewImage(null)}
-                >
-                    <div className="relative max-h-full max-w-full group">
-                        <img
-                            src={previewImage}
-                            alt="Preview"
-                            className="h-auto w-auto max-h-[95vh] max-w-[95vw] object-contain rounded-lg shadow-2xl transition-transform duration-300 group-hover:scale-[1.01]"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            onClick={() => setPreviewImage(null)}
-                            className="absolute -top-4 -right-4 rounded-full shadow-lg hover:bg-background hover:text-destructive scale-110"
-                        >
-                            <XCircle className="w-6 h-6" />
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* Image Preview Drawer */}
+            <FilePreviewDrawer
+                open={!!previewImage}
+                onOpenChange={(open) => !open && setPreviewImage(null)}
+                fileUrl={previewImage}
+                fileName="Lampiran Logbook"
+            />
 
             {/* Compact Breadcrumb/Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/logbooks">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                <ArrowLeft className="w-4 h-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => router.back()}
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                        </Button>
                         <span className="text-sm font-medium text-muted-foreground">Logbooks</span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm font-bold text-foreground">Detail Kegiatan</span>

@@ -34,7 +34,7 @@ export function ParticipantCard({
     omsetGrowth,
     newJobs
 }: ParticipantCardProps) {
-    const growthColor = omsetGrowth > 0 ? "text-emerald-600 dark:text-emerald-400" : omsetGrowth < 0 ? "text-destructive" : "text-muted-foreground";
+    const growthColor = omsetGrowth > 0 ? "text-chart-2" : omsetGrowth < 0 ? "text-destructive" : "text-muted-foreground";
     const GrowthIcon = omsetGrowth > 0 ? TrendingUp : TrendingDown;
 
     const routingId = (id_tkm && id_tkm !== "N/A") ? id_tkm : id;

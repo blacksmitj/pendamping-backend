@@ -185,9 +185,9 @@ export default function DownloadsPage() {
                                         <TableCell>
                                             <div className="flex items-center gap-1.5">
                                                 {log.status === "completed" ? (
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    <CheckCircle2 className="h-4 w-4 text-chart-2" />
                                                 ) : (
-                                                    <Clock className="h-4 w-4 text-amber-500" />
+                                                    <Clock className="h-4 w-4 text-chart-3" />
                                                 )}
                                                 <span className="text-xs capitalize">{log.status}</span>
                                             </div>

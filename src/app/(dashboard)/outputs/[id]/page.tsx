@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useOutputDetail, OutputEmployee } from "@/hooks/use-output-detail";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ import {
     Target
 } from "lucide-react";
 import Link from "next/link";
+import { FilePreviewDrawer } from "@/components/dashboard/file-preview-drawer";
 
 const formatCurrency = (value: number | null) => {
     if (!value) return "Rp 0";
@@ -145,6 +147,7 @@ export default function OutputDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const router = useRouter();
     const { data: output, isLoading, isError } = useOutputDetail(id);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [pdfPreview, setPdfPreview] = useState<{ url: string; title: string } | null>(null);
@@ -241,80 +244,31 @@ export default function OutputDetailPage({
 
     return (
         <div className="w-full space-y-6 pb-20 animate-in fade-in duration-500">
-            {/* Image Preview Modal & PDF Dialog */}
-            {previewImage && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in zoom-in duration-200"
-                    onClick={() => setPreviewImage(null)}
-                >
-                    <div className="relative max-h-full max-w-full group">
-                        <img
-                            src={previewImage}
-                            alt="Preview"
-                            className="h-auto w-auto max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl ring-1 ring-white/20"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <button
-                            onClick={() => setPreviewImage(null)}
-                            className="absolute -top-4 -right-4 bg-background text-foreground rounded-full p-2 shadow-2xl border border-border hover:bg-muted transition-all hover:scale-110 active:scale-90"
-                        >
-                            <XCircle className="w-6 h-6" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <Dialog open={!!pdfPreview} onOpenChange={(open) => !open && setPdfPreview(null)}>
-                <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden gap-0">
-                    <DialogHeader className="p-4 border-b bg-muted/30">
-                        <DialogTitle className="flex items-center gap-2 text-lg font-black">
-                            <div className="bg-destructive/10 p-2 rounded-lg">
-                                <FileText className="w-5 h-5 text-destructive" />
-                            </div>
-                            {pdfPreview?.title || "Dokumen PDF"}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="flex-1 min-h-0 bg-muted">
-                        {pdfPreview && (
-                            <iframe
-                                src={pdfPreview.url}
-                                className="w-full h-full"
-                                title={pdfPreview.title}
-                            />
-                        )}
-                    </div>
-                    <div className="p-4 border-t bg-background flex flex-col sm:flex-row gap-3">
-                        <Button
-                            variant="outline"
-                            className="flex-1 font-bold h-12 rounded-xl"
-                            onClick={() => window.open(pdfPreview?.url, '_blank')}
-                        >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Buka di Tab Baru
-                        </Button>
-                        <Button
-                            variant="default"
-                            className="flex-1 font-bold h-12 rounded-xl"
-                            asChild
-                        >
-                            <a href={pdfPreview?.url} download>
-                                <Download className="w-4 h-4 mr-2" />
-                                Unduh Dokumen
-                            </a>
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Image & PDF Preview Drawer */}
+            <FilePreviewDrawer
+                open={!!previewImage || !!pdfPreview}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewImage(null);
+                        setPdfPreview(null);
+                    }
+                }}
+                fileUrl={previewImage || pdfPreview?.url || null}
+                fileName={pdfPreview?.title || (previewImage ? "Lampiran Output" : null)}
+            />
 
             {/* Breadcrumb & Compact Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4" >
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/outputs">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => router.back()}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
                         <span className="text-sm font-medium text-muted-foreground">Outputs</span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm font-bold text-foreground">Detail Capaian</span>
@@ -329,7 +283,7 @@ export default function OutputDetailPage({
                 <div className="flex items-center gap-3">
                     {getVerificationBadge(output.verifikasi)}
                     {output.lpj_status && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-black uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-2/10 text-chart-2 border border-chart-2/20 text-xs font-black uppercase tracking-wider">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             LPJ Selesai
                         </div>
@@ -353,9 +307,9 @@ export default function OutputDetailPage({
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-blue-500/5 transition-colors group">
+                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-chart-3/5 transition-colors group">
                             <CardContent className="p-4 flex flex-col gap-2">
-                                <div className="rounded-full bg-background p-2 w-fit text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
+                                <div className="rounded-full bg-background p-2 w-fit text-chart-3 shadow-sm group-hover:scale-110 transition-transform">
                                     <Package className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0">
@@ -364,9 +318,9 @@ export default function OutputDetailPage({
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-purple-500/5 transition-colors group">
+                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-chart-1/5 transition-colors group">
                             <CardContent className="p-4 flex flex-col gap-2">
-                                <div className="rounded-full bg-background p-2 w-fit text-purple-500 shadow-sm group-hover:scale-110 transition-transform">
+                                <div className="rounded-full bg-background p-2 w-fit text-chart-1 shadow-sm group-hover:scale-110 transition-transform">
                                     <ShoppingCart className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0">
@@ -375,9 +329,9 @@ export default function OutputDetailPage({
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-orange-500/5 transition-colors group">
+                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-chart-4/5 transition-colors group">
                             <CardContent className="p-4 flex flex-col gap-2">
-                                <div className="rounded-full bg-background p-2 w-fit text-orange-500 shadow-sm group-hover:scale-110 transition-transform">
+                                <div className="rounded-full bg-background p-2 w-fit text-chart-4 shadow-sm group-hover:scale-110 transition-transform">
                                     <Users className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0">
@@ -427,9 +381,9 @@ export default function OutputDetailPage({
                                                         </div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge className={`text-[10px] font-black uppercase tracking-tighter ${employee.is_active ? "bg-emerald-500 hover:bg-emerald-600" : "bg-muted text-muted-foreground"}`}>
-                                                        {employee.is_active ? "Aktif" : "Non-Aktif"}
+                                                <TableCell className="py-4">
+                                                    <Badge className={`text-[10px] font-black uppercase tracking-tighter ${employee.is_active ? "bg-chart-2 hover:bg-chart-2/90" : "bg-muted text-muted-foreground"}`}>
+                                                        {employee.is_active ? "Aktif" : "Non-aktif"}
                                                     </Badge>
                                                     <p className="text-[10px] font-medium text-muted-foreground mt-1 whitespace-nowrap">{employee.employment_status}</p>
                                                 </TableCell>
@@ -591,7 +545,7 @@ export default function OutputDetailPage({
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    className="w-full h-11 rounded-xl font-black text-xs uppercase tracking-wider border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-600 transition-all gap-2"
+                                    className="w-full h-11 rounded-xl font-black text-xs uppercase tracking-wider border-chart-2/20 hover:bg-chart-2/10 hover:text-chart-2 transition-all gap-2"
                                     onClick={() => window.open(`https://wa.me/${output.peserta.no_whatsapp?.replace(/^0/, '62')}`, '_blank')}
                                 >
                                     <MessageCircle className="w-4 h-4" /> Hubungi Peserta
@@ -634,7 +588,7 @@ export default function OutputDetailPage({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="w-full h-11 rounded-xl font-bold text-xs border-indigo-500/20 hover:bg-indigo-500/10 hover:text-indigo-600 transition-all gap-2"
+                                        className="w-full h-11 rounded-xl font-bold text-xs border-primary/20 hover:bg-primary/10 hover:text-primary transition-all gap-2"
                                         onClick={() => window.open(`https://wa.me/${output.pendamping.no_whatsapp?.replace(/^0/, '62')}`, '_blank')}
                                     >
                                         <MessageCircle className="w-4 h-4" /> WhatsApp Mentor

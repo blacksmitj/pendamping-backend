@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useParticipantOutputs } from "@/hooks/use-participant-outputs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +107,7 @@ function BookkeepingBadge({ value }: { value: string | null }) {
 }
 
 export function OutputTab({ participantId }: { participantId: string }) {
+    const router = useRouter();
     const { data, isLoading, isError } = useParticipantOutputs(participantId);
 
     const chartData = useMemo(() => {
@@ -328,7 +330,11 @@ export function OutputTab({ participantId }: { participantId: string }) {
                                     {outputs
                                         .sort((a, b) => a.month_report - b.month_report)
                                         .map((output) => (
-                                            <TableRow key={output.id} className="text-sm">
+                                            <TableRow
+                                                key={output.id}
+                                                className="text-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => router.push(`/outputs/${output.id}`)}
+                                            >
                                                 <TableCell className="font-medium py-2">
                                                     {output.month_report}
                                                 </TableCell>

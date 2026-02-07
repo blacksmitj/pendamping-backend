@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useMentorDetail, useMentorParticipants } from "@/hooks/use-mentor-detail";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,8 +30,19 @@ import { MentorOutputTab } from "@/components/mentors/mentor-output-tab";
 
 export default function MentorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
     const { data: mentor, isLoading, isError } = useMentorDetail(id);
     const { data: participants = [], isLoading: participantsLoading } = useMentorParticipants(id);
+
+    const activeTab = searchParams.get("tab") || "participants";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", value);
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
     if (isLoading) {
         return (
@@ -64,11 +76,14 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/mentors">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => router.back()}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
                         <span className="text-sm font-medium text-muted-foreground">Mentors</span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm font-bold text-foreground">Detail Profil</span>
@@ -134,7 +149,7 @@ export default function MentorDetailPage({ params }: { params: Promise<{ id: str
                     </div>
 
                     {/* Activity Tabs */}
-                    <Tabs defaultValue="participants" className="space-y-6">
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsList className="bg-muted/30 p-1 h-12 w-full grid grid-cols-3 md:w-auto md:inline-flex">
                             <TabsTrigger value="participants" className="gap-2 font-bold data-[state=active]:shadow-sm">
                                 <Users className="h-4 w-4" /> <span className="hidden sm:inline">Peserta Binaan</span><span className="sm:hidden">Peserta</span>

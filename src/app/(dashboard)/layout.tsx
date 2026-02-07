@@ -1,8 +1,7 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/dashboard/header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -10,20 +9,17 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content Area */}
-      <div className="ml-[200px]">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
         {/* Header */}
         <Header />
 
         {/* Page Content */}
-        <main className="min-h-[calc(100vh-5rem)] bg-background pt-20">
-          <div className="p-8">{children}</div>
+        <main className="min-h-screen bg-background">
+          <div className="p-4 md:p-8">{children}</div>
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

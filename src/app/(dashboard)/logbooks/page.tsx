@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLogbooks } from "@/hooks/use-logbooks";
 import { LogbookTable } from "../_components/logbook-table";
 import { LogbookEntry } from "@/types/dashboard";
+import { FilterSortDrawer } from "@/components/logbooks/filter-sort-drawer";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Filter } from "lucide-react";
 
 const pageSizeOptions = [10, 20, 50];
 
@@ -14,11 +19,17 @@ export default function LogbooksPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = usePersistentState("logbooks-sortBy", "date");
+  const [sortOrder, setSortOrder] = usePersistentState<"asc" | "desc">("logbooks-sortOrder", "desc");
 
-  const [filterVerified, setFilterVerified] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterVerified, setFilterVerified] = usePersistentState("logbooks-filterVerified", "");
+  const [filterDate, setFilterDate] = usePersistentState("logbooks-filterDate", "");
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  const activeFilterCount = [
+    filterVerified !== "",
+    filterDate !== "",
+  ].filter(Boolean).length;
 
   const {
     data: logbookResponse,
@@ -65,6 +76,14 @@ export default function LogbooksPage() {
     }
   }, [page, totalPages]);
 
+  const handleResetFilters = () => {
+    setFilterVerified("");
+    setFilterDate("");
+    setSortBy("date");
+    setSortOrder("desc");
+    setPage(1);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,87 +108,58 @@ export default function LogbooksPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Select
-              value={sortBy}
-              onValueChange={(value) => {
-                setSortBy(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-52">
-                <SelectValue placeholder="Urutkan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Sort: Tanggal</SelectItem>
-                <SelectItem value="verified">Sort: Status</SelectItem>
-                <SelectItem value="pendamping">Sort: Pendamping</SelectItem>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                onClick={() => setIsFilterDrawerOpen(true)}
+                className={`h-10 gap-2 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all ${activeFilterCount > 0 ? "bg-primary/5 border-primary/30 text-primary font-medium" : "bg-muted/50"
+                  }`}
+              >
+                <Filter className={`h-4 w-4 ${activeFilterCount > 0 ? "text-primary" : "text-muted-foreground"}`} />
+                <span>Filter & Urutkan</span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground border-none text-[10px] font-bold">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
 
-                <SelectItem value="id_tkm">Sort: ID TKM</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filterVerified || "all"}
-              onValueChange={(value) => {
-                setFilterVerified(value === "all" ? "" : value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-44">
-                <SelectValue placeholder="Filter status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua status</SelectItem>
-                {verifiedOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <DatePicker
-              value={filterDate}
-              onChange={(value) => {
-                setFilterDate(value);
-                setPage(1);
-              }}
-              className="w-full sm:w-44"
-              placeholder="Filter tanggal"
-            />
-            <Select
-              value={sortOrder}
-              onValueChange={(value) =>
-                setSortOrder(value as "asc" | "desc")
-              }
-            >
-              <SelectTrigger className="h-10 w-full sm:w-32">
-                <SelectValue placeholder="Order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">Desc</SelectItem>
-                <SelectItem value="asc">Asc</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 w-full sm:w-32">
-                <SelectValue placeholder="Page size" />
-              </SelectTrigger>
-              <SelectContent>
-                {pageSizeOptions.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size} / page
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-10 w-full sm:w-32 bg-muted/50 border-border/60 rounded-xl font-medium">
+                  <SelectValue placeholder="Page size" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {pageSizeOptions.map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size} / page
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          <FilterSortDrawer
+            open={isFilterDrawerOpen}
+            onOpenChange={setIsFilterDrawerOpen}
+            filterVerified={filterVerified}
+            filterDate={filterDate}
+            onVerifiedChange={setFilterVerified}
+            onDateChange={setFilterDate}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortByChange={setSortBy}
+            onSortOrderChange={setSortOrder}
+            verifiedOptions={verifiedOptions}
+            onReset={handleResetFilters}
+          />
 
           <LogbookTable
             entries={entries}

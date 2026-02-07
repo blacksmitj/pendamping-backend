@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
     Building2,
@@ -26,7 +27,18 @@ import { UniversityParticipantsTab } from "@/components/universities/university-
 
 export default function UniversityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
     const { data: university, isLoading, isError } = useUniversityDetail(id);
+
+    const activeTab = searchParams.get("tab") || "mentors";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", value);
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
     if (isLoading) {
         return (
@@ -77,11 +89,14 @@ export default function UniversityDetailPage({ params }: { params: Promise<{ id:
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <Link href="/universities">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => router.back()}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
                         <span className="text-sm font-medium text-muted-foreground">Universities</span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm font-bold text-foreground">Detail Profil</span>
@@ -125,7 +140,7 @@ export default function UniversityDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* Content Tabs */}
-                    <Tabs defaultValue="mentors" className="space-y-6">
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsList className="bg-muted/30 p-1 h-12 w-full grid grid-cols-2 md:w-auto md:inline-flex">
                             <TabsTrigger value="mentors" className="gap-2 font-bold data-[state=active]:shadow-sm">
                                 <Users className="h-4 w-4" /> <span className="hidden sm:inline">Daftar Mentor</span><span className="sm:hidden">Mentor</span>
