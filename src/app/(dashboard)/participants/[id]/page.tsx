@@ -35,6 +35,7 @@ import { LogbookTab } from "@/components/participants/logbook-tab";
 import { DocumentsTab } from "@/components/participants/documents-tab";
 import { OutputTab } from "@/components/participants/output-tab";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { FilePreviewDrawer } from "@/components/dashboard/file-preview-drawer";
 
@@ -141,76 +142,99 @@ export default function ParticipantDetailPage({
             />
 
             {/* Breadcrumb & Compact Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6 px-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-full"
-                            onClick={() => router.back()}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm font-medium text-muted-foreground">Participants</span>
-                        <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-sm font-bold text-foreground">Detail Profil</span>
+                    <div className="flex items-center gap-2 text-muted-foreground/60 transition-colors">
+                        <Link href="/participants" className="text-xs font-medium hover:text-primary flex items-center gap-1">
+                            <Users className="h-3 w-3" /> Participants
+                        </Link>
+                        <ChevronRight className="w-3 h-3" />
+                        <span className="text-xs font-bold text-foreground">Detail Profil</span>
                     </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
-                        {participant.nama}
-                        <Badge variant="outline" className={`capitalize font-bold border-2 ${participant.status === "active" ? "bg-primary/5 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}`}>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-black tracking-tight text-foreground">
+                            {participant.nama}
+                        </h1>
+                        <Badge 
+                            variant="secondary" 
+                            className={`px-2 py-0 text-[10px] uppercase font-black border-none ${
+                                participant.status === "active" 
+                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400" 
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                        >
                             {participant.status || "N/A"}
                         </Badge>
-                    </h1>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {participant.no_whatsapp && (
                         <Button
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 shadow-lg shadow-primary/20"
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-9 font-bold shadow-md shadow-emerald-600/10"
                             onClick={() => window.open(`https://wa.me/${participant.no_whatsapp?.replace(/^0/, '62')}`, '_blank')}
                         >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Hubungi via WA
+                            <MessageCircle className="w-3.5 h-3.5 mr-2" />
+                            WhatsApp
                         </Button>
                     )}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full border bg-background/50 hover:bg-background"
+                        onClick={() => router.back()}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
+
+            <Separator className="opacity-50 mx-4 w-auto" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 px-4">
                 {/* Left Column: Main Content */}
                 <div className="lg:col-span-8 space-y-6">
                     {/* Stats Grid */}
-                    <div className="grid gap-4 md:grid-cols-3">
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-primary/5 transition-colors group">
-                            <CardContent className="p-6 flex items-center gap-4">
-                                <div className="rounded-full bg-background p-3 text-primary shadow-sm group-hover:scale-110 transition-transform">
-                                    <TrendingUp className="h-6 w-6" />
+                    <div className="grid gap-3 md:grid-cols-3">
+                        <Card className="border-none shadow-sm bg-background/60 backdrop-blur-sm border border-border/10 hover:border-primary/20 transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <TrendingUp className="h-12 w-12 text-primary" />
+                            </div>
+                            <CardContent className="p-4 flex items-center gap-3 relative z-10">
+                                <div className="rounded-xl bg-primary/5 p-2.5 text-primary">
+                                    <TrendingUp className="h-5 w-5" />
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Est. Omset</p>
-                                    <p className="text-lg font-black tabular-nums">{participant.omset_per_periode ? `Rp ${participant.omset_per_periode.toLocaleString()}` : "-"}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-chart-3/5 transition-colors group">
-                            <CardContent className="p-6 flex items-center gap-4">
-                                <div className="rounded-full bg-background p-3 text-chart-3 shadow-sm group-hover:scale-110 transition-transform">
-                                    <Building2 className="h-6 w-6" />
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Sektor Usaha</p>
-                                    <p className="text-lg font-black truncate">{participant.sektor_usaha || "-"}</p>
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-0.5">Omset Periode</p>
+                                    <p className="text-base font-black tabular-nums">{participant.omset_per_periode ? `Rp ${participant.omset_per_periode.toLocaleString()}` : "-"}</p>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow-sm bg-muted/30 hover:bg-chart-2/5 transition-colors group">
-                            <CardContent className="p-6 flex items-center gap-4">
-                                <div className="rounded-full bg-background p-3 text-chart-2 shadow-sm group-hover:scale-110 transition-transform">
-                                    <FileText className="h-6 w-6" />
+                        <Card className="border-none shadow-sm bg-background/60 backdrop-blur-sm border border-border/10 hover:border-chart-3/20 transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <Building2 className="h-12 w-12 text-chart-3" />
+                            </div>
+                            <CardContent className="p-4 flex items-center gap-3 relative z-10">
+                                <div className="rounded-xl bg-chart-3/5 p-2.5 text-chart-3">
+                                    <Building2 className="h-5 w-5" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Batch</p>
-                                    <p className="text-lg font-black">{participant.batch_pembekalan || "-"}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-0.5">Sektor Usaha</p>
+                                    <p className="text-base font-black truncate">{participant.sektor_usaha || "-"}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-none shadow-sm bg-background/60 backdrop-blur-sm border border-border/10 hover:border-chart-2/20 transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <FileText className="h-12 w-12 text-chart-2" />
+                            </div>
+                            <CardContent className="p-4 flex items-center gap-3 relative z-10">
+                                <div className="rounded-xl bg-chart-2/5 p-2.5 text-chart-2">
+                                    <FileText className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-0.5">Batch</p>
+                                    <p className="text-base font-black">{participant.batch_pembekalan || "-"}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -235,69 +259,70 @@ export default function ParticipantDetailPage({
 
                         <TabsContent value="detail" className="mt-0 space-y-6 focus-visible:outline-none">
                             {/* Data Pribadi & Alamat */}
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <Card className="border-none shadow-md overflow-hidden">
-                                    <CardHeader className="bg-muted/30 border-b pb-4">
-                                        <CardTitle className="text-sm font-extrabold uppercase tracking-widest flex items-center gap-2">
-                                            <User className="h-4 w-4 text-primary" /> Data Pribadi
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-6 space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Tempat Lahir</p>
-                                                <p className="font-bold text-sm">{participant.tempat_lahir || "-"}</p>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Card className="border-none shadow-sm bg-background/60 backdrop-blur-sm border border-border/10 overflow-hidden">
+                                    <div className="bg-muted/30 border-b px-4 py-2.5 flex items-center justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
+                                            <User className="h-3.5 w-3.5 text-primary" /> Data Pribadi
+                                        </h3>
+                                    </div>
+                                    <CardContent className="p-4 space-y-4">
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                            <div className="space-y-0.5">
+                                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Tempat Lahir</p>
+                                                <p className="font-bold text-xs">{participant.tempat_lahir || "-"}</p>
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Tanggal Lahir</p>
-                                                <p className="font-bold text-sm">{formatDate(participant.tgl_lahir)}</p>
+                                            <div className="space-y-0.5">
+                                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Tanggal Lahir</p>
+                                                <p className="font-bold text-xs">{formatDate(participant.tgl_lahir)}</p>
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Umur</p>
-                                                <p className="font-bold text-sm">{participant.umur ? `${participant.umur} thn` : "-"}</p>
+                                            <div className="space-y-0.5">
+                                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Umur</p>
+                                                <p className="font-bold text-xs">{participant.umur ? `${participant.umur} thn` : "-"}</p>
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Pendidikan</p>
-                                                <p className="font-bold text-sm">{participant.pendidikan_terakhir || "-"}</p>
+                                            <div className="space-y-0.5">
+                                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Pendidikan</p>
+                                                <p className="font-bold text-xs">{participant.pendidikan_terakhir || "-"}</p>
                                             </div>
                                         </div>
-                                        <div className="pt-2">
-                                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">Disabilitas</p>
-                                            <p className={`font-bold text-sm flex items-center gap-2 ${participant.penyandang_disabilitas ? "text-destructive" : "text-foreground"}`}>
+                                        <Separator className="opacity-30" />
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Disabilitas</p>
+                                            <p className={`font-black text-xs flex items-center gap-1.5 ${participant.penyandang_disabilitas ? "text-amber-600" : "text-foreground"}`}>
                                                 {participant.penyandang_disabilitas ? (
-                                                    <><CheckCircle2 className="h-3.5 w-3.5" /> Ya ({participant.jenis_disabilitas || "-"})</>
+                                                    <><CheckCircle2 className="h-3 w-3" /> Ya ({participant.jenis_disabilitas || "-"})</>
                                                 ) : "Tidak"}
                                             </p>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-none shadow-md overflow-hidden">
-                                    <CardHeader className="bg-muted/30 border-b pb-4">
-                                        <CardTitle className="text-sm font-extrabold uppercase tracking-widest flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-primary" /> Alamat KTP
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-6 space-y-4 text-sm font-medium">
-                                        <p className="text-foreground leading-relaxed italic border-l-2 border-primary/20 pl-3">
+                                <Card className="border-none shadow-sm bg-background/60 backdrop-blur-sm border border-border/10 overflow-hidden">
+                                    <div className="bg-muted/30 border-b px-4 py-2.5 flex items-center justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
+                                            <MapPin className="h-3.5 w-3.5 text-primary" /> Alamat KTP
+                                        </h3>
+                                    </div>
+                                    <CardContent className="p-4 space-y-3 text-xs">
+                                        <p className="text-muted-foreground leading-relaxed font-medium bg-muted/20 p-2.5 rounded-lg border border-border/5 mb-2">
                                             {participant.alamat_ktp || "-"}
                                         </p>
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2">
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-1">
                                             <div>
-                                                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Desa/Kel</span>
-                                                <span className="font-bold">{participant.kelurahan_ktp || "-"}</span>
+                                                <span className="text-[9px] uppercase font-bold text-muted-foreground/70 block">Desa/Kel</span>
+                                                <span className="font-bold truncate block">{participant.kelurahan_ktp || "-"}</span>
                                             </div>
                                             <div>
-                                                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Kecamatan</span>
-                                                <span className="font-bold">{participant.kecamatan_ktp || "-"}</span>
+                                                <span className="text-[9px] uppercase font-bold text-muted-foreground/70 block">Kecamatan</span>
+                                                <span className="font-bold truncate block">{participant.kecamatan_ktp || "-"}</span>
                                             </div>
                                             <div>
-                                                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Kota/Kab</span>
-                                                <span className="font-bold">{participant.kota_ktp || "-"}</span>
+                                                <span className="text-[9px] uppercase font-bold text-muted-foreground/70 block">Kota/Kab</span>
+                                                <span className="font-bold truncate block">{participant.kota_ktp || "-"}</span>
                                             </div>
                                             <div>
-                                                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Provinsi</span>
-                                                <span className="font-bold">{participant.provinsi_ktp || "-"}</span>
+                                                <span className="text-[9px] uppercase font-bold text-muted-foreground/70 block">Provinsi</span>
+                                                <span className="font-bold truncate block">{participant.provinsi_ktp || "-"}</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -348,92 +373,89 @@ export default function ParticipantDetailPage({
                 {/* Right Column: Sidebar */}
                 <div className="lg:col-span-4 space-y-6">
                     {/* Compact Profile Card */}
-                    <Card className="border-none shadow-md overflow-hidden bg-gradient-to-br from-background to-muted/20">
-                        <header className="relative h-24 bg-primary/10">
-                            <div className="absolute inset-x-0 -bottom-10 flex justify-center">
+                    <Card className="border-none shadow-sm overflow-hidden bg-background/60 backdrop-blur-md border border-border/10">
+                        <header className="relative h-20 bg-primary/5">
+                            <div className="absolute inset-x-0 -bottom-8 flex justify-center">
                                 <div
                                     className={`relative group ${participant.foto ? "cursor-pointer" : ""}`}
                                     onClick={() => participant.foto && setIsImageOpen(true)}
                                 >
-                                    <Avatar className="h-28 w-28 border-4 border-background shadow-2xl ring-2 ring-primary/20 transition-transform group-hover:scale-105">
+                                    <Avatar className="h-20 w-20 border-4 border-background shadow-xl ring-1 ring-border/50 transition-all group-hover:ring-primary/30">
                                         <AvatarImage src={participant.foto || undefined} className="object-cover" />
-                                        <AvatarFallback className="text-4xl font-black bg-primary/5 text-primary">
+                                        <AvatarFallback className="text-2xl font-black bg-primary/5 text-primary">
                                             {getInitials(participant.nama)}
                                         </AvatarFallback>
                                     </Avatar>
                                     {participant.foto && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ExternalLink className="w-8 h-8 text-white drop-shadow-md" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ExternalLink className="w-5 h-5 text-white drop-shadow-md" />
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </header>
-                        <CardContent className="pt-14 pb-8 text-center space-y-4 px-6">
+                        <CardContent className="pt-10 pb-6 text-center space-y-4 px-5">
                             <div>
-                                <h2 className="text-2xl font-black text-foreground leading-tight">{participant.nama}</h2>
-                                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mt-1">{participant.nik || "-"}</p>
+                                <h2 className="text-xl font-black text-foreground tracking-tight">{participant.nama}</h2>
+                                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-0.5">{participant.nik || "-"}</p>
                             </div>
 
-                            <div className="grid gap-3 p-4 bg-background/50 rounded-2xl border border-border shadow-inner text-sm">
-                                <div className="flex items-center justify-between group">
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <Phone className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
-                                        <span className="text-[10px] font-bold uppercase">Phone</span>
-                                    </div>
-                                    <span className="font-bold tabular-nums text-foreground/80">{participant.no_whatsapp || "-"}</span>
+                            <div className="grid gap-2.5 p-3.5 bg-muted/20 rounded-xl border border-border/5 text-[11px]">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-tighter">
+                                        <Phone className="h-3 w-3" /> Phone
+                                    </span>
+                                    <span className="font-black tabular-nums">{participant.no_whatsapp || "-"}</span>
                                 </div>
-                                <div className="w-full h-px bg-border" />
-                                <div className="flex items-center justify-between group">
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <CreditCard className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
-                                        <span className="text-[10px] font-bold uppercase">Jenis Kelamin</span>
-                                    </div>
-                                    <span className="font-bold text-foreground/80">{participant.jenis_kelamin || "-"}</span>
+                                <Separator className="opacity-10" />
+                                <div className="flex items-center justify-between">
+                                    <span className="font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-tighter">
+                                        <User className="h-3 w-3" /> Gender
+                                    </span>
+                                    <span className="font-black">{participant.jenis_kelamin || "-"}</span>
                                 </div>
-                                <div className="w-full h-px bg-border" />
-                                <div className="flex items-center justify-between group text-left">
-                                    <div className="flex items-center gap-2 text-muted-foreground shrink-0">
-                                        <Building2 className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
-                                        <span className="text-[10px] font-bold uppercase">Univ</span>
-                                    </div>
-                                    <span className="font-bold text-foreground/80 text-right truncate pl-2">{(participant as any).university?.name || "-"}</span>
+                                <Separator className="opacity-10" />
+                                <div className="flex items-center justify-between text-left">
+                                    <span className="font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-tighter shrink-0">
+                                        <Building2 className="h-3 w-3" /> Univ
+                                    </span>
+                                    <span className="font-black truncate pl-4">{(participant as any).university?.name || "-"}</span>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Business Info Card */}
-                    <Card className="border-none shadow-md overflow-hidden">
-                        <CardHeader className="bg-muted/30 border-b py-4 px-6">
-                            <CardTitle className="text-xs font-extrabold uppercase tracking-widest flex items-center gap-2">
-                                <Briefcase className="h-4 w-4 text-primary" /> Informasi Usaha
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-5">
+                    <Card className="border-none shadow-sm overflow-hidden bg-background/60 backdrop-blur-sm border border-border/10">
+                        <div className="bg-muted/30 border-b px-5 py-3 flex items-center justify-between">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
+                                <Briefcase className="h-3.5 w-3.5 text-primary" /> Informasi Usaha
+                            </h3>
+                        </div>
+                        <CardContent className="p-5 space-y-5">
                             <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Nama Usaha</p>
-                                <p className="font-black text-lg text-foreground-900 leading-tight">{participant.nama_usaha || "-"}</p>
+                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Nama Usaha</p>
+                                <p className="font-black text-base text-foreground tracking-tight leading-tight">{participant.nama_usaha || "-"}</p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Produk Utama</p>
-                                <p className="font-bold flex items-center gap-2 text-sm">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> {participant.produk_utama || "-"}
+                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Produk Utama</p>
+                                <p className="font-bold flex items-center gap-1.5 text-xs text-foreground/80">
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {participant.produk_utama || "-"}
                                 </p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Lokasi Usaha</p>
-                                <p className="font-bold text-sm leading-snug">{participant.alamat_usaha || participant.alamat_domisili || "-"}</p>
+                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Lokasi Usaha</p>
+                                <p className="font-bold text-xs leading-snug text-foreground/80">{participant.alamat_usaha || participant.alamat_domisili || "-"}</p>
                             </div>
-                            <div className="pt-2">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1 p-3 bg-muted/30 rounded-xl">
-                                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Omset</p>
-                                        <p className="font-black text-xs text-primary">{formatCurrency(participant.omset_per_periode)}</p>
+                            <div className="pt-1">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-0.5 p-2.5 bg-primary/5 rounded-lg border border-primary/10">
+                                        <p className="text-[8px] uppercase font-black text-primary/70 tracking-widest">Omset</p>
+                                        <p className="font-black text-[13px] text-primary tabular-nums">{formatCurrency(participant.omset_per_periode)}</p>
                                     </div>
-                                    <div className="space-y-1 p-3 bg-muted/30 rounded-xl">
-                                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Laba</p>
-                                        <p className="font-black text-xs text-chart-2">{formatCurrency(participant.laba_per_periode)}</p>
+                                    <div className="space-y-0.5 p-2.5 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                                        <p className="text-[8px] uppercase font-black text-emerald-600/70 tracking-widest">Laba</p>
+                                        <p className="font-black text-[13px] text-emerald-600 tabular-nums">{formatCurrency(participant.laba_per_periode)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -441,24 +463,24 @@ export default function ParticipantDetailPage({
                     </Card>
 
                     {/* Social Media & Kerabat */}
-                    <Card className="border-none shadow-md overflow-hidden bg-muted/10">
-                        <CardHeader className="bg-muted/30 border-b py-4 px-6">
-                            <CardTitle className="text-xs font-extrabold uppercase tracking-widest flex items-center gap-2">
-                                <Globe className="h-4 w-4 text-primary" /> Media Sosial & Kontak Darurat
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-6">
+                    <Card className="border-none shadow-sm overflow-hidden bg-background/60 backdrop-blur-sm border border-border/10">
+                        <div className="bg-muted/30 border-b px-5 py-3 flex items-center justify-between">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
+                                <Globe className="h-3.5 w-3.5 text-primary" /> Media & Kontak
+                            </h3>
+                        </div>
+                        <CardContent className="p-5 space-y-5">
                             {participant.nama_medsos && (
                                 <div className="space-y-2">
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Akun Media Sosial</p>
-                                    <div className="flex items-center justify-between p-3 bg-background rounded-xl border border-border">
-                                        <div>
-                                            <p className="text-xs font-bold">{participant.jenis_medsos || "Username"}</p>
-                                            <p className="text-xs text-muted-foreground">{participant.nama_medsos}</p>
+                                    <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Media Sosial</p>
+                                    <div className="flex items-center justify-between p-2.5 bg-muted/10 rounded-xl border border-border/5">
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/80">{participant.jenis_medsos || "Account"}</p>
+                                            <p className="text-xs font-bold truncate">{participant.nama_medsos}</p>
                                         </div>
                                         {participant.link_media_sosial && (
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => window.open(participant.link_media_sosial!, '_blank')}>
-                                                <ExternalLink className="h-4 w-4" />
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10 rounded-lg shrink-0" onClick={() => window.open(participant.link_media_sosial!, '_blank')}>
+                                                <ExternalLink className="h-3.5 w-3.5" />
                                             </Button>
                                         )}
                                     </div>
@@ -466,24 +488,24 @@ export default function ParticipantDetailPage({
                             )}
 
                             <div className="space-y-3">
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Kontak Kerabat</p>
+                                <p className="text-[9px] uppercase font-bold text-muted-foreground/70">Kontak Kerabat</p>
                                 <div className="space-y-2">
                                     {participant.no_kerabat_1 && (
-                                        <div className="p-3 bg-background rounded-xl border border-border space-y-1">
+                                        <div className="p-3 bg-muted/10 rounded-xl border border-border/5 space-y-1">
                                             <div className="flex items-center justify-between">
                                                 <p className="text-xs font-black">{participant.nama_kerabat_1}</p>
-                                                <Badge variant="outline" className="text-[9px] h-4 uppercase">{participant.status_kerabat_1 || "Keluarga"}</Badge>
+                                                <Badge variant="secondary" className="text-[8px] h-3.5 px-1.5 uppercase font-bold bg-muted/40">{participant.status_kerabat_1 || "Keluarga"}</Badge>
                                             </div>
-                                            <p className="text-xs text-muted-foreground tabular-nums">{participant.no_kerabat_1}</p>
+                                            <p className="text-[11px] text-muted-foreground tabular-nums font-medium">{participant.no_kerabat_1}</p>
                                         </div>
                                     )}
                                     {participant.no_kerabat_2 && (
-                                        <div className="p-3 bg-background rounded-xl border border-border space-y-1">
+                                        <div className="p-3 bg-muted/10 rounded-xl border border-border/5 space-y-1">
                                             <div className="flex items-center justify-between">
                                                 <p className="text-xs font-black">{participant.nama_kerabat_2}</p>
-                                                <Badge variant="outline" className="text-[9px] h-4 uppercase">{participant.status_kerabat_2 || "Keluarga"}</Badge>
+                                                <Badge variant="secondary" className="text-[8px] h-3.5 px-1.5 uppercase font-bold bg-muted/40">{participant.status_kerabat_2 || "Keluarga"}</Badge>
                                             </div>
-                                            <p className="text-xs text-muted-foreground tabular-nums">{participant.no_kerabat_2}</p>
+                                            <p className="text-[11px] text-muted-foreground tabular-nums font-medium">{participant.no_kerabat_2}</p>
                                         </div>
                                     )}
                                 </div>

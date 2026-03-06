@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePersistentState } from "@/hooks/use-persistent-state";
-import { GraduationCap, Phone, RefreshCw } from "lucide-react";
+import { GraduationCap, Phone, RefreshCw, Download } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,10 @@ export default function MentorsPage() {
     setPage(1);
   };
 
+  const handleDownload = () => {
+    window.location.href = "/api/export/mentors";
+  };
+
   return (
     <div className="space-y-10">
       <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -141,6 +145,15 @@ export default function MentorsPage() {
         columns={["Foto", "Nama & Email", "Universitas", "Total Peserta", "Total Kunjungan"]}
         headerActions={
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="h-10 gap-2 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all bg-muted/50"
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+              <span>Download</span>
+            </Button>
+
             <Button
               variant="outline"
               onClick={() => setIsFilterDrawerOpen(true)}
