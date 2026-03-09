@@ -5,17 +5,24 @@ import { useState, useEffect, useCallback } from "react";
 export function usePersistentState<T>(key: string, defaultValue: T) {
     // State to store our value
     // Pass initial state function to useState so logic is only executed once
-    const [state, setState] = useState<T>(() => {
-        if (typeof window === "undefined") return defaultValue;
+    const [state, setState] = useState<T>(defaultValue);
+    const [isHydrated, setIsHydrated] = useState(false);
 
-        try {
-            const item = window.localStorage.getItem(key);
-            return item ? JSON.parse(item) : defaultValue;
-        } catch (error) {
-            console.warn(`Error reading localStorage key "${key}":`, error);
-            return defaultValue;
+    // Initialize from localStorage after component mounts
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const item = window.localStorage.getItem(key);
+                if (item) {
+                    setState(JSON.parse(item));
+                }
+            } catch (error) {
+                console.warn(`Error reading localStorage key "${key}":`, error);
+            } finally {
+                setIsHydrated(true);
+            }
         }
-    });
+    }, [key]);
 
     // Update localStorage whenever the state changes
     useEffect(() => {
@@ -35,5 +42,5 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
         }
     }, [key, defaultValue]);
 
-    return [state, setState, reset] as const;
+    return [state, setState, isHydrated, reset] as const;
 }
